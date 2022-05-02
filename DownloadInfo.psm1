@@ -89,9 +89,9 @@ domainjoined="0">
             $Arguments = @{
                 UseBasicParsing = $true;
                 Uri = $UpdateServiceURL;
-                Method = 'Post';
+                Method = 'POST';
                 UserAgent = 'winhttp';
-                Body = $RequestBody.OuterXml
+                Body = $RequestBody.OuterXml;
                 ErrorAction = "Stop"
             }
             Try {
@@ -123,18 +123,29 @@ domainjoined="0">
         
         'SourceForge' {
             Try {
-                [uri] (
-                    Curl --url "https://sourceforge.net/projects/$RepositoryId/files/latest/download" --silent --head --location |
-                    ForEach-Object { If ($_ -match '^Location:') { ($_ -split ': ',2)[-1] } }
-                )[-1] |
-                Select-Object -Property @{
-                    Name = 'Version';
-                    Expression = { 
-                        $_.Segments[-(2 + ($PathFromVersion.Split('/', [System.StringSplitOptions]::RemoveEmptyEntries)).Length)] -replace '/'
-                    }
-                },@{
-                    Name = 'Link';
-                    Expression = { $_ }
+                $Arguments = @{
+                    UseBasicParsing = $true;
+                    Uri = "https://sourceforge.net/projects/$RepositoryId/files/latest/download";
+                    Method = 'HEAD';
+                    UserAgent = 'curl';
+                    MaximumRedirection = 1;
+                    SkipHttpErrorCheck = $true;
+                    ErrorAction = "Stop"
+                }
+                Invoke-WebRequest @Arguments |
+                ForEach-Object {
+                    If($_.StatusCode -eq 302) {
+                        [uri] [string] $_.Headers.Location |
+                        Select-Object -Property @{
+                            Name = 'Version';
+                            Expression = { 
+                                $_.Segments[-(2 + ($PathFromVersion.Split('/', [System.StringSplitOptions]::RemoveEmptyEntries)).Length)] -replace '/'
+                            }
+                        },@{
+                            Name = 'Link';
+                            Expression = { $_ }
+                        }
+                    } Else { Throw }
                 }
             }
             Catch {}
