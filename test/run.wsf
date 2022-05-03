@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<package>
+    <comment>
+        Test OmahaDownloadInfo
+    </comment>
+    <job id="TestObject">
+        <script src="helper.js"/>
+        <script src="..\GithubDownloadInfo.js">
+            <![CDATA[
+            var ghdl = new GithubDownloadInfo(BuildPath('hugo.js'))
+            WSH.Echo(ghdl.Version)
+            for (var i = 0; i < ghdl.Link.length; i++) WSH.Echo(ghdl.Link[i])
+            ]]>
+        </script>
+    </job>
+    <job id="TestCOM">
+        <script  src="helper.js">
+            <![CDATA[
+            var ghdl2 = new ActiveXObject('Github.DownloadInfo')
+            ghdl2.ConfigFile = BuildPath('hugo.js')
+            WSH.Echo(ghdl2.Version)
+            var arr = ghdl2.Link.toArray()
+            for (var i = 0; i < ghdl2.Count; i++) WSH.Echo(arr[i])
+            ]]>
+        </script>
+    </job>
+    <job id="TestCOM2">
+        <script  src="helper.js">
+            <![CDATA[
+            var ghdl2 = new ActiveXObject('Omaha.DownloadInfo')
+            ghdl2.ConfigFile = BuildPath('googlechrome.toml')
+            WSH.Echo(ghdl2.Version)
+            var arr = ghdl2.Link.toArray()
+            for (var i = 0; i < ghdl2.Count; i++) WSH.Echo(arr[i])
+            ]]>
+        </script>
+    </job>
+    <job id="TestCOM2">
+        <script  src="helper.js">
+            <![CDATA[
+            var ghdl2 = new ActiveXObject('Sourceforge.DownloadInfo')
+            ghdl2.ConfigFile = BuildPath('sevenzip.toml')
+            WSH.Echo(ghdl2.Version)
+            WSH.Echo(ghdl2.Link)
+            ]]>
+        </script>
+    </job>
+</package>

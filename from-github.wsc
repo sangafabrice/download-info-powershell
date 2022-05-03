@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+<package>
+    <?component error="false" debug="false"?>
+	<!-- 
+        Helper component to retrieve
+        update info of an application
+        hosted on GitHub Servers
+    -->
+    <component>
+        <registration 
+        progid="Github.DownloadInfo"
+        description="Download GitHub App Update Info"
+        version="1"
+        classid="{5A279CCD-AEA9-4553-9E41-47305D1DD9C4}"/>
+		<public>
+			<property name="Version">
+				<!-- 
+                    The latest version of 
+                    the requested application
+                -->
+				<get internalname="GetVersion"/>
+			</property>
+			<property name="Link">
+				<!--
+                    The list of absolute URLs of
+                    the setup resource to be downloaded
+                -->
+				<get internalname="GetLink"/>
+			</property>
+            <property name="Count">
+				<!--
+                    The count of available URLs
+                -->
+				<get internalname="GetCount"/>
+			</property>
+			<property name="ConfigFile">
+				<!-- 
+                    Set the values of the properties 
+                    Version and Link.
+                    It wraps the GithubDownloadInfo.
+                -->
+				<put internalname="SetUpdateInfo"/>
+			</property>
+		</public>
+        <script language="vbscript">
+            <![CDATA[
+            Dim strVersion
+            Dim arrLinks()
+            Dim intCount
+            
+            Function GetVersion
+                GetVersion = strVersion
+            End Function
+            
+            Function GetLink
+                GetLink = arrLinks
+            End Function
+
+            Function GetCount
+                GetCount = intCount + 1
+            End Function
+        
+            Sub SetUpdateInfo(strConfigFile)
+                Set objInfo = CreateObject("__gh.dlinfo")
+                objInfo.ConfigFile = strConfigFile
+                strVersion = objInfo.Version
+                arr = Split(objInfo.Link, ",")
+                intCount = UBound(arr)
+                ReDim arrLinks(intCount)
+                For i = 0 To intCount
+                    arrLinks(i) = arr(i)
+                Next
+            End Sub
+            ]]>
+        </script>
+    </component>
+</package>

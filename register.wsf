@@ -1,0 +1,56 @@
+<?xml version="1.0"?>
+<package>
+    <comment>
+        Test OmahaDownloadInfo
+    </comment>
+    <job>
+        <script>
+            <![CDATA[
+            var objFso = new ActiveXObject("Scripting.FileSystemObject")
+            var strRootDir = objFso.GetParentFolderName(WSH.ScriptFullName)
+
+            function BuildPath(FileName) {
+                return objFso.BuildPath(strRootDir, FileName)
+            }
+            ]]>
+        </script>
+        <script src="ComRegistrar.js">
+            <![CDATA[
+            var objReg = new ComRegistrar(strRootDir, 8)
+
+            function RegisterWsc(FileName) {
+                with(objReg) {
+                    Load(BuildPath(FileName))
+                    if (!Registered()) {
+                        Write()
+                        Register()
+                    }
+                }
+            }
+            ]]>
+        </script>
+        <script id="SourceForge">
+            <![CDATA[
+            RegisterWsc('from-sourceforge.wsc')
+            ]]>
+        </script>
+        <script id="GitHub">
+            <![CDATA[
+            RegisterWsc('GithubDownloadInfo.wsc')
+            RegisterWsc('from-github.wsc')
+            ]]>
+        </script>
+        <script id="Omaha">
+            <![CDATA[
+            with(objReg) {
+                Load(BuildPath('from-omaha.wsc'))
+                if (!Registered()) {
+                    GetText().documentElement.selectSingleNode("/package//resource[@id='OmahaRequestBody']").text = BuildPath('rsc\\omaha-request.xml')
+                    Write()
+                    Register()
+                }
+            }
+            ]]>
+        </script>
+    </job>
+</package>
