@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+<package>
+    <?component error="false" debug="false"?>
+    <!-- 
+        Helper component to retrieve
+        update info of an application
+        hosted on SourceForge Servers
+    -->
+    <component>
+        <registration 
+        progid="SourceForge.DownloadInfo"
+        description="Download SourceForge App Update Info"
+        version="1"
+        classid="{5A279CCD-AEA9-4553-9E41-47305D1DD9C4}"/>
+        <public>
+            <property name="Version">
+                <!-- 
+                    The latest version of 
+                    the requested application
+                -->
+                <get internalname="GetVersion"/>
+            </property>
+            <property name="Link">
+                <!--
+                    The setup resource url to be downloaded
+                -->
+                <get internalname="GetLink"/>
+            </property>
+            <property name="ConfigFile">
+                <!-- 
+                    Set the values of the properties 
+                    Version and Link.
+                    It wraps the SourceForgeDownloadInfo.
+                -->
+                <put internalname="SetUpdateInfo"/>
+            </property>
+        </public>
+        <script src="SourceForgeDownloadInfo.js">
+            <![CDATA[
+            var strVersion
+            var arrLinks = new Array()
+
+            function GetVersion() {
+                return strVersion
+            }
+        
+            function GetLink() {
+                return arrLinks
+            }
+        
+            function SetUpdateInfo(strConfigFile) {
+                var objInfo = new SourceForgeDownloadInfo(strConfigFile)
+                strVersion = objInfo.Version
+                arrLinks = objInfo.Link
+            }
+            ]]>
+        </script>
+    </component>
+</package>

@@ -1,0 +1,114 @@
+<?xml version="1.0"?>
+<package>
+    <?component error="false" debug="false"?>
+    <!-- 
+        Helper class component to 
+        retrieve update info of an application
+        hosted on Omaha Servers
+    -->
+    <component>
+        <registration 
+        progid="Omaha.DownloadInfo"
+        description="Download Omaha App Update Info"
+        version="1"
+        classid="{5A279CCD-AEA9-4553-9E41-47305D1DD9C4}"/>
+        <public>
+            <property name="Version">
+                <!-- 
+                    The latest version of 
+                    the requested application
+                -->
+                <get internalname="GetVersion"/>
+            </property>
+            <property name="Link">
+                <!--
+                    The list of absolute URLs of
+                    the setup resource to be downloaded
+                -->
+                <get internalname="GetLink"/>
+            </property>
+            <property name="Count">
+				<!--
+                    The count of available URLs
+                -->
+				<get internalname="GetCount"/>
+			</property>
+            <property name="ConfigFile">
+                <!-- 
+                    Set the values of the properties 
+                    Version and Link
+                    (1) Read the Configuration File and
+                        retrieve configuration variables.
+                        The Configuration File template:
+                        =======================
+                        UpdateServiceURL=<url>
+                        ApplicationID=<guid>
+                        OwnerBrand=<string>
+                        =======================
+                    (2) Set the request body by replacing
+                        placehoders with values from the 
+                        variables set in the configuration file
+                    (3) Send the request
+                    (4) Parse the response and set
+                        the property values
+                -->
+                <put internalname="SetUpdateInfo"/>
+            </property>
+        </public>
+        <script language="vbscript">
+            <![CDATA[
+            Dim strVersion
+            Dim arrLinks()
+            Dim intCount
+
+            Function GetVersion
+                GetVersion = strVersion
+            End Function
+        
+            Function GetLink
+                GetLink = arrLinks
+            End Function
+
+            Function GetCount
+                GetCount = intCount
+            End Function
+        
+            Sub SetUpdateInfo(strConfigFile)
+                With CreateObject("Scripting.FileSystemObject")             ' (1)
+                    With .OpenTextFile(.GetFile(strConfigFile).Path, 1)
+                        Execute .ReadAll()
+                        .Close
+                    End With
+                End With
+                Set xmlDoc = CreateObject("Msxml2.DOMDocument.6.0")         ' (2)
+                xmlDoc.load(GetResource("OmahaRequestBody"))
+                With xmlDoc.documentElement.selectSingleNode("/request")
+                    .selectSingleNode("//@appid").text = ApplicationID
+                    .selectSingleNode("//@brand").text = OwnerBrand
+                End With
+                With CreateObject("WinHttp.WinHttpRequest.5.1")             ' (3)
+                    .Open "POST", UpdateServiceURL, false
+                    .Send(xmlDoc.xml)
+                    xmlDoc.loadXML(.ResponseText)
+                End With
+                With xmlDoc.documentElement.selectSingleNode("/response")   ' (4)
+                    Set objUrls = .selectNodes("//@codebase")
+                    strSetupName = .selectSingleNode("//@name").text
+                    Redim arrLinks(objUrls.Length - 1)
+                    intIndex = 0
+                    For Each url In objUrls
+                        url_text = url.text
+                        If Right(url_text, 1) <> "/" Then url_text = url_text & "/"
+                        arrLinks(intIndex) = url_text & strSetupName
+                        intIndex = intIndex + 1
+                    Next
+                    intCount = intIndex
+                    strVersion = .selectSingleNode("//@version").text
+                End With
+                Set xmlDoc = Nothing
+            End Sub
+            ]]>
+        </script>
+        <resource id="OmahaRequestBody">.\omaha-request.xml</resource>
+    </component>
+</package>
