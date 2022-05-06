@@ -7,6 +7,7 @@
 :     [RequestProperties]
 :     RepositoryId=<url>
 :     AssetPattern=<guid>
+:     ExcludeTag=<regexp>
 :     ----------------------
 : [2:=] Version reference of the application
 : [3:=] Absolute URL reference of the setup
@@ -45,8 +46,14 @@ PushD "%~dp0"
 Call util\Batch.bat Delete-VariableList version link count
 : Set URL and send HTTP request with curl
 : Parse HTTP response header with Jq
+Set base=https://api.github.com/repos/%RepositoryId%/releases
+Set curl_cmd=Curl --url %base%/latest --silent
+If DEFINED ExcludeTag (
+    Set curl_cmd=Curl --url %base% --silent
+    Set "curl_cmd=!curl_cmd! ^^^| Jq --arg ExcludeTag %ExcludeTag% --from-file github\exclude-pattern.jq"
+)
 For /F "Tokens=*" %%L In ('^
-    Curl --url https://api.github.com/repos/%RepositoryId%/releases/latest --silent ^|^
+    %curl_cmd% ^|^
     Jq --arg AssetPattern %AssetPattern% --from-file github\parse-response.jq 2^> Nul^
 ') Do Set "%%~L"
 Call util\Batch.bat Set version link count
