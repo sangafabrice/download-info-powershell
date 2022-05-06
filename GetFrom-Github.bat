@@ -59,4 +59,3 @@ For /F "Tokens=*" %%L In ('^
 Call util\Batch.bat Set version link count
 PopD
 EndLocal
-GoTo :EOF
