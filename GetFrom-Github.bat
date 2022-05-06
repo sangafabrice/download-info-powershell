@@ -7,7 +7,7 @@
 :     [RequestProperties]
 :     RepositoryId=<url>
 :     AssetPattern=<regexp>
-:     ExcludeTag=<regexp>
+:     ExcludeTag=<regexp> (optional)
 :     ----------------------
 : [2:=] Version reference of the application
 : [3:=] Absolute URL reference of the setup
