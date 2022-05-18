@@ -18,7 +18,7 @@
 If Not ""=="%~2%~3%~4" (
     For /F "Tokens=1* Delims==" %%U In ('Call "%~f0" %1') Do (
         If "version"=="%%U" If Not ""=="%~2" ( Set "%~2=%%V" ) Else Echo %%U=%%V
-        If "link"=="%%U" If Not ""=="%~4" ( Set "%~4=%%V" ) Else Echo %%U=%%V
+        If "link"=="%%U" If Not ""=="%~3" ( Set "%~3=%%V" ) Else Echo %%U=%%V
     )
     GoTo :EOF
 )
