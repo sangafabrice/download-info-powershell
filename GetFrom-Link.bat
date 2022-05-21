@@ -1,13 +1,6 @@
 @Echo OFF
 
 :Main
-: 1=: Request properties in an ini-file
-:     The ini-file template:
-:     ----------------------
-:     [RequestProperties]
-:     RepositoryId=<url>
-:     PathFromVersion=<guid>
-:     ----------------------
 : [2:=] Version reference of the application
 : [3:=] Absolute URL reference of the setup
 
@@ -25,7 +18,16 @@ If Not ""=="%~2%~3" (
 : -----------------------------------------------
 
 SetLocal ENABLEDELAYEDEXPANSION
-: Read ini-file
-For /F "Skip=1 Tokens=*" %%P In (%~f1) Do Set "%%P"
-Call "%~dp0GetFrom-Link.bat" SourceForge
+PushD "%~dp0"
+For /F "Skip=1 Tokens=*" %%P In (process\%~n1.ini) Do Set "%%P"
+Call util\Batch.bat Delete-VariableList version link
+: Set URL and send HTTP request with curl
+: Parse HTTP response header
+: Get the url and the version
+For /F %%L In ('Call util\Get-UrlEffective.bat "%RedirectedURL%" %TEMP%\%~n1.null') Do Set "link=%%~L"
+Call process\%~n1.bat "!link:%%=%%%%!" version
+Set link=!link:%%=%%%%!
+Set version=!version:%%=%%%%!
+Call util\Batch.bat Set version link
+PopD
 EndLocal

@@ -42,22 +42,14 @@ GoTo Jump
 SetLocal ENABLEDELAYEDEXPANSION
 : Read ini-file
 For /F "Skip=1 Tokens=*" %%P In (%~f1) Do Set "%%P"
-PushD "%~dp0"
 : Set request body
-Set body=%~n1-request.xml
-Set request=%~n1-request.conf
-Set response=%~n1-response.xml
+Set body=%TEMP%\%~n1-request.xml
+Set request=%TEMP%\%~n1-request.conf
+Set response=%TEMP%\%~n1-response.xml
+PushD "%~dp0"
 Xml ed --update request//@appid --value %ApplicationID% omaha\request.xml |^
 Xml ed --update request//@brand --value %OwnerBrand% > %body%
-: Set and send WinHTTP request
-Type Nul > %request% 
-For /F "Tokens=1*" %%C In (omaha\request.conf) Do (
-    Set request_arg=
-    Echo %%C| FindStr /B "\-\-url \-\-data \-\-output" > Nul && Call :Set-Request %%D
-    If Not DEFINED request_arg Set request_arg=%%D
-    Echo %%C !request_arg!>> %request%
-) 
-Curl --config %request%
+Call util\Send-Request.bat omaha\request.conf "--url --data --output" %request%
 : Parse HTTP response body
 Call util\Batch.bat Delete-VariableList version link count name codebase
 Call :Get-NodeValue version
@@ -70,9 +62,9 @@ For /F "Delims==" %%C In ('Set codebase 2^> Nul') Do (
     Set link!index!=!%%C!%name%
 )
 Call util\Batch.bat Set version link count
-: Clean filesystem
-Del /F /Q %body% %request% %response%
 PopD
+: Clean filesystem
+Del /F /Q %body% %response%
 EndLocal
 GoTo :EOF
 
