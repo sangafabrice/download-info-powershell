@@ -24,7 +24,7 @@ Call util\Batch.bat Delete-VariableList version link
 : Set URL and send HTTP request with curl
 : Parse HTTP response header
 : Get the url and the version
-For /F %%L In ('Call util\Get-UrlEffective.bat "%RedirectedURL%" %TEMP%\%~n1.null') Do Set "link=%%~L"
+For /F %%L In ('Call util\Get-UrlEffective.bat "%RedirectedURL:?=__qm__%" %TEMP%\%~n1.null') Do Set "link=%%~L"
 Call process\%~n1.bat "!link:%%=%%%%!" version
 Set link=!link:%%=%%%%!
 Set version=!version:%%=%%%%!

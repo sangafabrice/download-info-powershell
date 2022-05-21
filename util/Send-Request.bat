@@ -15,7 +15,7 @@ Type Nul > %request%
 For /F "UseBackq Tokens=1*" %%C In ("%req_template%") Do (
     Set request_arg=
     Echo %%C| FindStr /B %req_argname:-=\-% > Nul && Call :Set-Request %%D
-    If Not DEFINED request_arg Set request_arg=%%D
+    If Not DEFINED request_arg ( Set "request_arg=%%D" ) Else Set "request_arg=!request_arg:__qm__=?!"
     Echo %%C !request_arg!>> %request%
 )
 ..\Curl --config %request%
