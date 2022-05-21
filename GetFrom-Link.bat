@@ -19,15 +19,29 @@ If Not ""=="%~2%~3" (
 
 SetLocal ENABLEDELAYEDEXPANSION
 PushD "%~dp0"
+Call util\Batch.bat Delete-VariableList version link RedirectedURL PageURL
 For /F "Skip=1 Tokens=*" %%P In (process\%~n1.ini) Do Set "%%P"
-Call util\Batch.bat Delete-VariableList version link
 : Set URL and send HTTP request with curl
 : Parse HTTP response header
 : Get the url and the version
-For /F %%L In ('Call util\Get-UrlEffective.bat "%RedirectedURL:?=__qm__%" %TEMP%\%~n1.null') Do Set "link=%%~L"
+If DEFINED RedirectedURL Call :GetLink-RedirectedURL
+If DEFINED PageURL Call :GetLink-PageURL
 Call process\%~n1.bat "!link:%%=%%%%!" version
 Set link=!link:%%=%%%%!
 Set version=!version:%%=%%%%!
 Call util\Batch.bat Set version link
 PopD
 EndLocal
+GoTo :EOF
+
+:GetLink-RedirectedURL
+    For /F %%L In ('Call util\Get-UrlEffective.bat "%RedirectedURL:?=__qm__%" %TEMP%\%~n1.null') Do Set "link=%%~L"
+    GoTo :EOF
+
+:GetLink-PageURL
+    If DEFINED IsBaseURL Set "link=%PageURL%"
+    For /F %%L In ('^
+        Curl --url "%PageURL%" --silent ^|^
+        Pup "%Selector%" ^
+    ') Do Set "link=%link%%%~L"
+    GoTo :EOF
