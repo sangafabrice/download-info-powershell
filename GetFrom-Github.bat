@@ -56,6 +56,8 @@ For /F "Tokens=*" %%L In ('^
     %curl_cmd% ^|^
     Jq --arg AssetPattern %AssetPattern% --from-file github\parse-response.jq ^
 ') Do If /I "null" NEQ "%%~L" Set "%%~L"
+Set process_script=process\%~n1.bat
+If EXIST %process_script% Call %process_script% "%version%" version
 Call util\Batch.bat Set version link count
 PopD
 EndLocal
