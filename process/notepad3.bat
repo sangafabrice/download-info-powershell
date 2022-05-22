@@ -1,0 +1,1 @@
+For /F "Tokens=1* Delims=_" %%U In ("%~1") Do Set %~2=%%~V
