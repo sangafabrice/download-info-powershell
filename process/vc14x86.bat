@@ -1,0 +1,1 @@
+@Call "%~dp0..\util\Get-LastModified" "%~1" %~2
