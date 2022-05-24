@@ -3,5 +3,5 @@
     Echo [URL]
     Echo PageURL=https://dotnet.microsoft.com%~1
     Echo Selector=a[href$=windows-hosting-bundle-installer] attr{href}
-) > "%~dp0dotnet_1.ini"
-GetFrom-Link.bat dotnet_1 %~2 %~3
+) > "%~dp0dotnet-asp_1.ini"
+GetFrom-Link.bat dotnet-asp_1 %~2 %~3
