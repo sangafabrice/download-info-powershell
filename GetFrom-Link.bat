@@ -44,7 +44,7 @@ GoTo :EOF
     If DEFINED IsBaseURL Set "link=%PageURL%"
     If DEFINED Selector1 Set filter=^^^| Pup "%Selector1%"
     For /F "Tokens=*" %%L In ('^
-        Curl --url "%PageURL%" --silent ^|^
+        Curl --url "%PageURL%" %CurlOption% --silent ^|^
         Pup "%Selector%" %filter%^
     ') Do (
         Set "link=%link%%%~L"
