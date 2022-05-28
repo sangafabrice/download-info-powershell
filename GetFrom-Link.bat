@@ -1,6 +1,7 @@
 @Echo OFF
 
 :Main
+: 1=: A set of configuration files - ini and bat files
 : [2:=] Version reference of the application
 : [3:=] Absolute URL reference of the setup
 
