@@ -47,8 +47,10 @@ Set body=%TEMP%\%~n1-request.xml
 Set request=%TEMP%\%~n1-request.conf
 Set response=%TEMP%\%~n1-response.xml
 PushD "%~dp0"
-Xml ed --update request//@appid --value %ApplicationID% omaha\request.xml |^
-Xml ed --update request//@brand --value %OwnerBrand% > %body%
+Xml ed --update request//@appid --value "%ApplicationID%" omaha\request.xml |^
+Xml ed --update request//@brand --value "%OwnerBrand%" |^
+Xml ed --update request//@lang --value "%ApplicationLang%" |^
+Xml ed --update request//@ap --value "%ApplicationSpec%" > %body%
 Call util\Send-Request.bat omaha\request.conf "--url --data --output" %request%
 : Parse HTTP response body
 Call util\Batch.bat Delete-VariableList version link count name codebase

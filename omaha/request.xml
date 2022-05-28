@@ -1,28 +1,17 @@
 <request
 protocol="3.1"
-updater="Omaha"
-ismachine="1"
-is_omaha64bit="0"
-is_os64bit="1"
-installsource="otherinstallcmd"
-testsource="auto"
-dedup="cr"
-domainjoined="0">
+updater="Omaha">
     <os
     platform="win"
     version="10"
-    sp=""
     arch="x64"/>
     <app
     appid="APPID"
     version=""
     nextversion=""
-    ap=""
-    lang="en-US"
-    brand="BRAND"
-    client=""
-    installage="-1"
-    installdate="-1">
-        <updatecheck />
+    ap="SPEC" 
+    lang="LANG"
+    brand="BRAND">
+        <updatecheck/>
     </app>
 </request>
