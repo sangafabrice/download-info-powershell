@@ -1,28 +1,53 @@
 Function Get-DownloadInfo {
+    [CmdletBinding(DefaultParameterSetName='UseFile')]
     Param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(
+            ParameterSetName='UseFile',
+            Position=0,
+            Mandatory=$true
+        )]
         [Alias('Path')]
         [string] $ConfigPath,
+        [Parameter(
+            ParameterSetName='UseHashtable',
+            Mandatory=$true
+        )]
+        [Alias('PropertyList')]
+        [System.Collections.Hashtable] $ConfigHash,
         [ValidateSet('Github', 'Omaha', 'SourceForge')]
         [Alias('From')]
         [string] $ApiName = 'Github'
     )
 
-    Get-Content $ConfigPath |
-    ForEach-Object {
-        ,($_ -split '=') |
-        ForEach-Object {
-            $Arguments = @{
-                Name = $_[0].Trim();
-                Value = ($_[1] -replace '"').Trim();
-                ErrorAction = 'Ignore'
+    Switch ($PSCmdlet.ParameterSetName) {
+        'UseHashtable' {
+            $ConfigHash.Keys |
+            ForEach-Object {
+                $Arguments = @{
+                    Name = $_;
+                    Value = $ConfigHash[$_];
+                    ErrorAction = 'Ignore'
+                }
+                Set-Variable @Arguments
             }
-            Set-Variable @Arguments
+        }
+        Default {
+            Get-Content $ConfigPath |
+            ForEach-Object {
+                ,($_ -split '=') |
+                ForEach-Object {
+                    $Arguments = @{
+                        Name = $_[0].Trim();
+                        Value = ($_[1] -replace '"').Trim();
+                        ErrorAction = 'Ignore'
+                    }
+                    Set-Variable @Arguments
+                }
+            }
         }
     }
 
     Switch ($ApiName) {
-        
         'GitHub' {
             $Arguments = @{
                 UseBasicParsing = $true;
@@ -38,53 +63,47 @@ Function Get-DownloadInfo {
                 },@{
                     Name = 'Link';
                     Expression = {
-                        $_.assets.browser_download_url |
+                        $_.assets |
                         ForEach-Object {
-                            If ($_ -match $AssetPattern) { [uri] $_ }
+                            If ($_.browser_download_url -match $AssetPattern) { 
+                                [PSCustomObject] @{
+                                    Url = [uri] $_.browser_download_url;
+                                    Size = $_.size
+                                }
+                            }
                         }
                     }
                 } -Unique
             }
             Catch {}
         }
-
         'Omaha' {
-            $RequestBody = [xml] @'
-<request
-protocol="3.1"
-updater="Omaha"
-ismachine="1"
-is_omaha64bit="0"
-is_os64bit="1"
-installsource="otherinstallcmd"
-testsource="auto"
-dedup="cr"
-domainjoined="0">
-    <os
-    platform="win"
-    version="10"
-    sp=""
-    arch="x64"/>
-    <app
-    appid=""
-    version=""
-    nextversion=""
-    ap=""
-    lang="en-US"
-    brand=""
-    client=""
-    installage="-1"
-    installdate="-1">
-        <updatecheck />
-    </app>
-</request>
-'@
+            $RequestBody = [xml] @"
+                <request
+                protocol="3.1"
+                updater="Omaha">
+                    <os
+                    platform="win"
+                    version="$([Environment]::OSVersion.Version)"
+                    arch="$([Environment]::Is64BitOperatingSystem ? 'x64':'x86')"/>
+                    <app
+                    appid=""
+                    version=""
+                    nextversion=""
+                    ap="" 
+                    lang="$((Get-WinSystemLocale).Name)"
+                    brand="">
+                        <updatecheck/>
+                    </app>
+                </request>
+"@
             {
                 Param ($Xpath, $Value)
                 ($RequestBody.request | Select-Xml $Xpath).Node.Value = $Value
             } | ForEach-Object {
                 & $_ '//@appid' $ApplicationID
                 & $_ '//@brand' $OwnerBrand
+                & $_ '//@ap' $ApplicationSpec
             }
             $Arguments = @{
                 UseBasicParsing = $true;
@@ -106,9 +125,7 @@ domainjoined="0">
                     }
                 } | Select-Object -Property @{
                     Name = "Version";
-                    Expression = {
-                        & $_ '//@version'
-                    }
+                    Expression = { & $_ '//@version' }
                 },@{
                     Name = "Link";
                     Expression = {
@@ -116,22 +133,27 @@ domainjoined="0">
                         & $_ '//@codebase' | 
                         ForEach-Object { [uri] "$_$(If ($_[-1] -ne '/') {'/'})$SetupName" }
                     }
+                },@{
+                    Name = "Checksum";
+                    Expression = { (& $_ '//@hash_sha256').ToUpper() }
+                },@{
+                    Name = "Size";
+                    Expression = { & $_ '//@size' }
                 }
             }
             Catch {}
-        }
-        
+        } 
         'SourceForge' {
+            $Arguments = @{
+                UseBasicParsing = $true;
+                Uri = "https://sourceforge.net/projects/$RepositoryId/files/latest/download";
+                Method = 'HEAD';
+                UserAgent = 'curl';
+                MaximumRedirection = 1;
+                SkipHttpErrorCheck = $true;
+                ErrorAction = "Stop"
+            }
             Try {
-                $Arguments = @{
-                    UseBasicParsing = $true;
-                    Uri = "https://sourceforge.net/projects/$RepositoryId/files/latest/download";
-                    Method = 'HEAD';
-                    UserAgent = 'curl';
-                    MaximumRedirection = 1;
-                    SkipHttpErrorCheck = $true;
-                    ErrorAction = "Stop"
-                }
                 Invoke-WebRequest @Arguments |
                 ForEach-Object {
                     If($_.StatusCode -eq 302) {
@@ -139,7 +161,7 @@ domainjoined="0">
                         Select-Object -Property @{
                             Name = 'Version';
                             Expression = { 
-                                $_.Segments[-(2 + ($PathFromVersion.Split('/', [System.StringSplitOptions]::RemoveEmptyEntries)).Length)] -replace '/'
+                                $_.Segments[-(2 + ($PathFromVersion.Split('/', [StringSplitOptions]::RemoveEmptyEntries)).Length)] -replace '/'
                             }
                         },@{
                             Name = 'Link';

@@ -1,0 +1,206 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<helpItems schema="maml" xmlns="http://msh">
+  <command:command xmlns:maml="http://schemas.microsoft.com/maml/2004/10" xmlns:command="http://schemas.microsoft.com/maml/dev/command/2004/10" xmlns:dev="http://schemas.microsoft.com/maml/dev/2004/10" xmlns:MSHelp="http://msdn.microsoft.com/mshelp">
+    <command:details>
+      <command:name>Get-DownloadInfo</command:name>
+      <command:verb>Get</command:verb>
+      <command:noun>DownloadInfo</command:noun>
+      <maml:description>
+        <maml:para>Gets the information to update an application</maml:para>
+      </maml:description>
+    </command:details>
+    <maml:description>
+      <maml:para>The `Get-DownloadInfo` function retrieves from a server information relative to updating a specific application. The canonical information set consists of:</maml:para>
+      <maml:para>- `Version`: the latest version of the application</maml:para>
+      <maml:para>- `Link`: the URL to the setup resource.</maml:para>
+      <maml:para></maml:para>
+      <maml:para>This set can be augmented with additional elements depending on the server that hosts the application. Those elements may be the size of the resource or its checksum code.</maml:para>
+      <maml:para>The command takes two parameters: either `-Path` or `-PropertyList`, and `-From`.</maml:para>
+      <maml:para>The parameter `-From` is the server name to get the information from, and its values are either Github , Omaha , or Sourceforge . The parameter `-PropertyList` is a set of name-value arguments required to build the HTTP request to the server. `-Path` is the path to a file holding the properties list.</maml:para>
+    </maml:description>
+    <command:syntax>
+      <command:syntaxItem>
+        <maml:name>Get-DownloadInfo</maml:name>
+        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="0" aliases="ConfigPath">
+          <maml:name>Path</maml:name>
+          <maml:description>
+            <maml:para>The path to the configuration file</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="ApiName">
+          <maml:name>From</maml:name>
+          <maml:description>
+            <maml:para>The host server to get the information from</maml:para>
+          </maml:description>
+          <command:parameterValueGroup>
+            <command:parameterValue required="false" command:variableLength="false">Github</command:parameterValue>
+            <command:parameterValue required="false" command:variableLength="false">Omaha</command:parameterValue>
+            <command:parameterValue required="false" command:variableLength="false">SourceForge</command:parameterValue>
+          </command:parameterValueGroup>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+      </command:syntaxItem>
+      <command:syntaxItem>
+        <maml:name>Get-DownloadInfo</maml:name>
+        <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="ConfigHash">
+          <maml:name>PropertyList</maml:name>
+          <maml:description>
+            <maml:para>The list of configuration arguments</maml:para>
+          </maml:description>
+          <command:parameterValue required="true" variableLength="false">Hashtable</command:parameterValue>
+          <dev:type>
+            <maml:name>Hashtable</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+        <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="ApiName">
+          <maml:name>From</maml:name>
+          <maml:description>
+            <maml:para>The host server to get the information from</maml:para>
+          </maml:description>
+          <command:parameterValueGroup>
+            <command:parameterValue required="false" command:variableLength="false">Github</command:parameterValue>
+            <command:parameterValue required="false" command:variableLength="false">Omaha</command:parameterValue>
+            <command:parameterValue required="false" command:variableLength="false">SourceForge</command:parameterValue>
+          </command:parameterValueGroup>
+          <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+          <dev:type>
+            <maml:name>String</maml:name>
+            <maml:uri />
+          </dev:type>
+          <dev:defaultValue>None</dev:defaultValue>
+        </command:parameter>
+      </command:syntaxItem>
+    </command:syntax>
+    <command:parameters>
+      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="0" aliases="ConfigPath">
+        <maml:name>Path</maml:name>
+        <maml:description>
+          <maml:para>The path to the configuration file</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="true" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="ConfigHash">
+        <maml:name>PropertyList</maml:name>
+        <maml:description>
+          <maml:para>The list of configuration arguments</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="false">Hashtable</command:parameterValue>
+        <dev:type>
+          <maml:name>Hashtable</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+      <command:parameter required="false" variableLength="true" globbing="false" pipelineInput="False" position="named" aliases="ApiName">
+        <maml:name>From</maml:name>
+        <maml:description>
+          <maml:para>The host server to get the information from</maml:para>
+        </maml:description>
+        <command:parameterValue required="true" variableLength="false">String</command:parameterValue>
+        <dev:type>
+          <maml:name>String</maml:name>
+          <maml:uri />
+        </dev:type>
+        <dev:defaultValue>None</dev:defaultValue>
+      </command:parameter>
+    </command:parameters>
+    <command:inputTypes>
+      <command:inputType>
+        <dev:type>
+          <maml:name>None</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para></maml:para>
+        </maml:description>
+      </command:inputType>
+    </command:inputTypes>
+    <command:returnValues>
+      <command:returnValue>
+        <dev:type>
+          <maml:name>System.Object</maml:name>
+        </dev:type>
+        <maml:description>
+          <maml:para></maml:para>
+        </maml:description>
+      </command:returnValue>
+    </command:returnValues>
+    <maml:alertSet>
+      <maml:alert>
+        <maml:para></maml:para>
+      </maml:alert>
+    </maml:alertSet>
+    <command:examples>
+      <command:example>
+        <maml:title>-------------------------- Example 1 --------------------------</maml:title>
+        <dev:code>PS &gt; Get-Content .\hugo.toml
+RepositoryId="gohugoio/hugo"
+AssetPattern="hugo_extended_.*_Windows-64bit\.zip$"
+
+PS &gt; Get-DownloadInfo -Path .\hugo.toml -From Github | Format-List
+Version : v0.99.1
+Link    : @{Url=https://github.com/gohugoio/hugo/releases/download/v0.99.1/hugo_extended_0.99.1_Windows-64bit.zip; Size=18560918}</dev:code>
+        <dev:remarks>
+          <maml:para>Get update information from GitHub using a configuration file.</maml:para>
+        </dev:remarks>
+      </command:example>
+      <command:example>
+        <maml:title>-------------------------- Example 2 --------------------------</maml:title>
+        <dev:code>PS &gt; $PropertyList = @{
+    UpdateServiceURL="https://update.googleapis.com/service/update2";
+    ApplicationID="{8A69D345-D564-463c-AFF1-A69D9E530F96}";
+    OwnerBrand="YTUH";
+    ApplicationSpec="x64-stable-statsdef_1"
+}
+
+PS &gt; $ChromeUpdate = Get-DownloadInfo -PropertyList $PropertyList -From Omaha
+
+PS &gt; $ChromeUpdate.Link[2].AbsoluteUri
+https://edgedl.me.gvt1.com/edgedl/release2/chrome/ade5ivbjyqxhzr5n4rtzkimdjmpq_102.0.5005.63/102.0.5005.63_chrome_installer.exe
+
+PS &gt; $ChromeUpdate.Checksum
+BAB92549E4A2B09897206D2B115195FE8594757406FB573F4AB1B2C2C1E0FD12</dev:code>
+        <dev:remarks>
+          <maml:para>Get update information from Omaha using the inline hashtable.</maml:para>
+        </dev:remarks>
+      </command:example>
+      <command:example>
+        <maml:title>-------------------------- Example 3 --------------------------</maml:title>
+        <dev:code>PS &gt; Get-DownloadInfo -PropertyList @{
+    RepositoryId="sevenzip";
+    PathFromVersion=""
+} -From Sourceforge
+
+Version Link
+------- ----
+21.07   https://netix.dl.sourceforge.net/project/sevenzip/7-Zip/21.07/7z2107-x64.exe</dev:code>
+        <dev:remarks>
+          <maml:para>Get update information from SourceForge.</maml:para>
+        </dev:remarks>
+      </command:example>
+    </command:examples>
+    <command:relatedLinks>
+      <maml:navigationLink>
+        <maml:linkText>Online Version:</maml:linkText>
+        <maml:uri>https://github.com/sangafabrice/download-info/blob/main/Readme.md</maml:uri>
+      </maml:navigationLink>
+    </command:relatedLinks>
+  </command:command>
+</helpItems>
