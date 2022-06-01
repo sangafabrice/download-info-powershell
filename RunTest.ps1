@@ -6,7 +6,7 @@ Begin {
 Process {
     New-PesterConfiguration |
     ForEach-Object {
-        Set-Location $PSScriptRoot
+        Push-Location $PSScriptRoot
         . .\DownloadInfo.Tests.ps1
         $_.CodeCoverage.Enabled = $true
         $_.CodeCoverage.CoveragePercentTarget = 95
@@ -35,7 +35,7 @@ Process {
             } | Set-Content -Path $Readme
         }
         Remove-Item .\DownloadInfo.Test.xml
-        Set-Location -
+        Pop-Location
     }
 }
 
