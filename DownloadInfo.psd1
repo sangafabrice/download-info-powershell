@@ -1,26 +1,27 @@
 @{
-    RootModule = '.\DownloadInfo.psm1'
+    RootModule = 'DownloadInfo.psm1'
     ModuleVersion = '2.0.0'
-    GUID = 'ecfd0286-cadf-4e46-b389-f76977c4d0de'
+    GUID = '63f08017-49ae-4ae7-b7f1-76cf9366f8da'
     Author = 'Fabrice Sanga'
     CompanyName = 'sangafabrice'
-    Copyright = '(c) sangafabrice. All rights reserved.'
+    Copyright = '(c)2022 sangafabrice. All rights reserved.'
     Description = 'Handles the information relative to updating an application'
-    PowerShellVersion = '7.0.0'
-    PowerShellHostVersion = '7.0.0'
+    PowerShellVersion = '7.0'
+    PowerShellHostName = 'ConsoleHost'
+    PowerShellHostVersion = '5.0'
     FunctionsToExport = @('Get-DownloadInfo')
     CmdletsToExport = @()
     VariablesToExport = ''
     AliasesToExport = @()
-    FileList = @('.\en-US\DownloadInfo-help.xml')
+    FileList = @('en-US\DownloadInfo-help.xml', 'DownloadInfo.psm1', 'DownloadInfo.psd1')
     PrivateData = @{
         PSData = @{
             Tags = @('GitHub','Omaha', 'Sourceforge', 'DownloadInfo', 'Update')
-            LicenseUri = 'https://github.com/sangafabrice/download-info/blob/LICENSE.md'
+            LicenseUri = 'https://github.com/sangafabrice/download-info/blob/main/LICENSE.md'
             ProjectUri = 'https://github.com/sangafabrice/download-info'
             IconUri = 'https://i.ibb.co/6wkd3Jy/shim-1.jpg'
             ReleaseNotes = 'Initial release of the module.'
-        } 
+        }
     }
 }
 
