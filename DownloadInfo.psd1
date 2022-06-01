@@ -16,10 +16,10 @@
     PrivateData = @{
         PSData = @{
             Tags = @('GitHub','Omaha', 'Sourceforge', 'DownloadInfo', 'Update')
-            LicenseUri = ''
+            LicenseUri = 'https://github.com/sangafabrice/download-info/blob/LICENSE.md'
             ProjectUri = 'https://github.com/sangafabrice/download-info'
-            IconUri = ''
-            ReleaseNotes = ''
+            IconUri = 'https://i.ibb.co/6wkd3Jy/shim-1.jpg'
+            ReleaseNotes = 'Initial release of the module.'
         } 
     }
 }
