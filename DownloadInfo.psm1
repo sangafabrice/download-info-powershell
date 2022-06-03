@@ -18,6 +18,10 @@ Function Get-DownloadInfo {
 
     Begin {
         Switch ($PSCmdlet.ParameterSetName) {
+            <#
+                Initialize configuration variables
+            #>
+
             'UseHashtable' {
                 $PropertyList.Keys |
                 ForEach-Object { @{

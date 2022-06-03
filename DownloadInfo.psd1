@@ -1,6 +1,6 @@
 @{
     RootModule = 'DownloadInfo.psm1'
-    ModuleVersion = '3.1.0'
+    ModuleVersion = '3.1.1'
     GUID = '63f08017-49ae-4ae7-b7f1-76cf9366f8da'
     Author = 'Fabrice Sanga'
     CompanyName = 'sangafabrice'
