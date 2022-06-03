@@ -1,6 +1,6 @@
 @{
     RootModule = 'DownloadInfo.psm1'
-    ModuleVersion = '3.0.0'
+    ModuleVersion = '3.1.1'
     GUID = '63f08017-49ae-4ae7-b7f1-76cf9366f8da'
     Author = 'Fabrice Sanga'
     CompanyName = 'sangafabrice'
@@ -20,7 +20,11 @@
             LicenseUri = 'https://github.com/sangafabrice/download-info/blob/main/LICENSE.md'
             ProjectUri = 'https://github.com/sangafabrice/download-info'
             IconUri = 'https://i.ibb.co/6wkd3Jy/shim-1.jpg'
-            ReleaseNotes = 'The module is compatible with PowerShell v5.'
+            ReleaseNotes = @'
+Add consistency between Pwsh v5 and v7 in SourceForge update info.
+Remove cmdlets error action parameters.
+Remove consolehost restriction.
+'@
         }
     }
 }
