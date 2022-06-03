@@ -1,6 +1,6 @@
 @{
     RootModule = 'DownloadInfo.psm1'
-    ModuleVersion = '3.0.1'
+    ModuleVersion = '3.0.2'
     GUID = '63f08017-49ae-4ae7-b7f1-76cf9366f8da'
     Author = 'Fabrice Sanga'
     CompanyName = 'sangafabrice'
@@ -19,7 +19,7 @@
             LicenseUri = 'https://github.com/sangafabrice/download-info/blob/main/LICENSE.md'
             ProjectUri = 'https://github.com/sangafabrice/download-info'
             IconUri = 'https://i.ibb.co/6wkd3Jy/shim-1.jpg'
-            ReleaseNotes = 'Remove consolehost restriction'
+            ReleaseNotes = 'Modify cmdlets error actions'
         }
     }
 }

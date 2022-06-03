@@ -23,7 +23,6 @@ Function Get-DownloadInfo {
                 ForEach-Object { @{
                     Name = $_;
                     Value = $PropertyList[$_];
-                    ErrorAction = 'Ignore'
                 } } | 
                 ForEach-Object { Set-Variable @_ }
             }
@@ -34,7 +33,6 @@ Function Get-DownloadInfo {
                     ForEach-Object { @{
                         Name = $_[0].Trim();
                         Value = ($_[1] -replace '"').Trim();
-                        ErrorAction = 'Ignore'
                     } } | 
                     ForEach-Object { Set-Variable @_ }
                 }
@@ -55,8 +53,7 @@ Function Get-DownloadInfo {
                 Try {
                     ( @{
                         UseBasicParsing = $true;
-                        Uri = "https://api.github.com/repos/$RepositoryId/releases/latest";
-                        ErrorAction = 'Stop'
+                        Uri = "https://api.github.com/repos/$RepositoryId/releases/latest"
                     } |
                     ForEach-Object { Invoke-WebRequest @_ } ).Content |
                     Out-String | ConvertFrom-Json |
@@ -125,8 +122,7 @@ Function Get-DownloadInfo {
                         Uri = $UpdateServiceURL;
                         Method = 'POST';
                         UserAgent = 'winhttp';
-                        Body = $RequestBody.OuterXml;
-                        ErrorAction = 'Stop'
+                        Body = $RequestBody.OuterXml
                     } |
                     ForEach-Object { Invoke-WebRequest @_ } ).Content |
                     Out-String |
@@ -180,7 +176,7 @@ Function Get-DownloadInfo {
                             7 { @{
                                 MaximumRedirection = 1;
                                 SkipHttpErrorCheck = $true;
-                                ErrorAction = 'Stop'
+                                ErrorAction = 'SilentlyContinue'
                             } }
                         }
                     ) | 
