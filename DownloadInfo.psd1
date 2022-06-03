@@ -19,7 +19,11 @@
             LicenseUri = 'https://github.com/sangafabrice/download-info/blob/main/LICENSE.md'
             ProjectUri = 'https://github.com/sangafabrice/download-info'
             IconUri = 'https://i.ibb.co/6wkd3Jy/shim-1.jpg'
-            ReleaseNotes = 'Add consistency between Pwsh v5 and v7 in SourceForge update info'
+            ReleaseNotes = @'
+Add consistency between Pwsh v5 and v7 in SourceForge update info.
+Remove cmdlets error action parameters.
+Remove consolehost restriction.
+'@
         }
     }
 }
