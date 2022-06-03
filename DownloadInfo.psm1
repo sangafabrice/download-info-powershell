@@ -166,18 +166,13 @@ Function Get-DownloadInfo {
                         UseBasicParsing = $true;
                         Uri = "https://sourceforge.net/projects/$RepositoryId/files/latest/download";
                         Method = 'HEAD';
-                        UserAgent = 'curl'
+                        UserAgent = 'curl';
+                        MaximumRedirection = 0;
+                        ErrorAction = 'SilentlyContinue'
                     } + $(
                         Switch($PSVersionTable.PSVersion.Major) {
-                            5 { @{
-                                MaximumRedirection = 0;
-                                ErrorAction = 'SilentlyContinue'
-                            } }
-                            7 { @{
-                                MaximumRedirection = 1;
-                                SkipHttpErrorCheck = $true;
-                                ErrorAction = 'SilentlyContinue'
-                            } }
+                            7 { @{ SkipHttpErrorCheck = $true; } }
+                            Default { @{} }
                         }
                     ) | 
                     ForEach-Object { Invoke-WebRequest @_ } | 
