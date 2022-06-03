@@ -3,9 +3,9 @@ Begin {
     Import-Module PlatyPS -Force
 }
 Process {
-    Set-Location $PSScriptRoot
+    Push-Location $PSScriptRoot
     New-ExternalHelp -Path .\en_us\ -OutputPath en-US -Force
-    Set-Location -
+    Pop-Location
 }
 End {
     Remove-Module PlatyPS -Force
