@@ -1,3 +1,70 @@
+$DevDependencies = @{
+    Pester = '5.3.3';
+    PlatyPS = '0.14.2';
+    Manifest = { Invoke-Expression "$(Get-Content .\DownloadInfo.psd1 -Raw)" }
+}
+
+Function New-DIMerge {
+    <#
+    .SYNOPSIS
+        Merge pwsh-module into main
+    .NOTES
+        Precondition:
+        1. The current branch is main
+        2. Module files are modified in main
+        3. The module manifest is modified
+    #>
+
+    Param($CommitMessage)
+
+    Push-Location $PSScriptRoot
+    $Manifest = & $DevDependencies.Manifest
+    $ManifestFile = $Manifest.FileList | Where-Object {$_ -like '*.psd1'}
+    If ($Null -eq $CommitMessage) {
+        $CommitMessage = Switch ($Manifest.PrivateData.PSData.ReleaseNotes) {
+            { ($_ -split "`n").Count -eq 1 } { "$_" }
+            Default { "RELEASE: v$($Manifest.ModuleVersion)" }
+        }
+    }
+    Try {
+        If ((git branch --show-current) -ne 'main') { Throw }
+        ,(@(git diff --name-only --cached) + @(git diff --name-only) |
+        Select-Object -Unique) |
+        ForEach-Object {
+            If ($_.Count -eq $_.Where({$_ -in $Manifest.FileList}, 'Until').Count) { Throw }
+            If ($Null -eq ($_ | Where-Object { $_ -eq $ManifestFile })) { Throw }
+        }
+        New-DITest
+        Invoke-Expression "git add $($Manifest.FileList) Readme.md"
+        Invoke-Expression "git commit --message '$CommitMessage' --quiet"
+        git stash push --include-untracked --quiet
+        git switch pwsh-module --quiet 2> $Null
+        If (!$?) {
+            git stash pop --quiet > $Null 2>&1 
+            Throw
+        }
+        git merge --no-commit main
+        $IsMergeError = !$?
+        $CDPattern = "$($PWD -replace '\\','\\')\\"
+        Get-ChildItem -Recurse -File |
+        Where-Object { ($_.FullName -replace $CDPattern) -inotin $Manifest.FileList } |
+        Remove-Item
+        Get-ChildItem -Directory |
+        Where-Object { ($_.FullName -replace $CDPattern) -inotin @($Manifest.FileList |
+            Where-Object { $_ -like '*\*' } |
+            ForEach-Object { ($_ -split '\\')[0] }) } |
+        Remove-Item -Recurse -Force
+        If ($IsMergeError) { Throw 'MergeConflict' }
+        Invoke-Expression "git commit --all --message '$CommitMessage' --quiet"
+        git switch main --quiet 2> $Null
+        git stash pop --quiet > $Null 2>&1
+    }
+    Catch {
+        "ERROR: $($_.Exception.Message)"
+    }
+    Pop-Location
+}
+
 Filter Publish-DIModule {
     <#
     .SYNOPSIS
@@ -11,9 +78,7 @@ Filter Publish-DIModule {
     Get-Module DownloadInfo -ListAvailable |
     ForEach-Object {
         Push-Location $PSScriptRoot
-        (git branch |
-        ConvertFrom-String |
-        Where-Object P1 -eq *).P2 |
+        git branch --show-current |
         ForEach-Object {
             Try {
                 If ($null -eq $Env:NUGET_API_KEY) { 
@@ -26,7 +91,7 @@ Filter Publish-DIModule {
                 git switch pwsh-module --quiet
                 Publish-Module -Name DownloadInfo -NuGetApiKey $Env:NUGET_API_KEY
                 git switch $_ --quiet 2> $Null
-                git stash pop 'stash@{0}' --quiet > $Null 2>&1
+                git stash pop --quiet > $Null 2>&1
             }
             Catch { "ERROR: $($_.Exception.Message)" }
         }
@@ -34,10 +99,6 @@ Filter Publish-DIModule {
     }
 }
 
-$DevDependencies = @{
-    Pester = '5.3.3';
-    PlatyPS = '0.14.2'
-}
 
 Function Update-DIHelp {
     <#
@@ -79,23 +140,27 @@ Function New-DITest {
     Process {
         New-PesterConfiguration |
         ForEach-Object {
+            $Manifest = & $DevDependencies.Manifest
+            $CodeCoverageDoc = '.\DownloadInfo.Tests.xml'
+            $PesterTest = '.\DownloadInfo.Tests.ps1'
+            $Readme = '.\Readme.md'
             Push-Location $PSScriptRoot
             # [BUGFIX] Run test without configuration
             # Then run a second test with Pester configuration
             # TODO: Find a way to avoid this bugfix test
-            . .\DownloadInfo.Tests.ps1
+            . $PesterTest
             # Configure and run Pester test
             $_.CodeCoverage.Enabled = $true
             $_.CodeCoverage.CoveragePercentTarget = 95
-            $_.CodeCoverage.OutputPath = '.\DownloadInfo.Test.xml'
+            $_.CodeCoverage.OutputPath = $CodeCoverageDoc
             $_.Output.Verbosity = 'Detailed'
-            $_.CodeCoverage.Path = '.\DownloadInfo.psm1'
-            $_.Run.Path = '.\DownloadInfo.Tests.ps1'
+            $_.CodeCoverage.Path = ".\$($Manifest.FileList | Where-Object {$_ -like '*.psm1'})"
+            $_.Run.Path = $PesterTest
             Invoke-Pester -Configuration $_
             # Document Module version and Code Coverage to Readme.md
             {
                 Param($State)
-                (Select-Xml .\DownloadInfo.Test.xml -XPath "/report/counter[@type = 'INSTRUCTION']/@$State").Node.Value |
+                (Select-Xml $CodeCoverageDoc -XPath "/report/counter[@type = 'INSTRUCTION']/@$State").Node.Value |
                 Select-Object -Unique
             } | ForEach-Object {
                 $Covered = [int] (& $_ 'covered')
@@ -106,13 +171,12 @@ Function New-DITest {
                     {$_ -gt 60 -and $_ -le 75}  { 'orange' }
                     Default { 'red' }
                 }
-                $Readme = '.\Readme.md'
                 Get-Content $Readme -Raw |
                 Out-String | ForEach-Object {
-                    $_ -replace '!\[Module Version\].+\)', "![Module Version](https://img.shields.io/badge/version-v$((Invoke-Expression "$(Get-Content .\DownloadInfo.psd1 -Raw)").ModuleVersion)-yellow) ![Test Coverage](https://img.shields.io/badge/coverage-$($Coverage.ToString('#.##'))%25-$BadgeColor)"
+                    $_ -replace '!\[Module Version\].+\)', "![Module Version](https://img.shields.io/badge/version-v$($Manifest.ModuleVersion)-yellow) ![Test Coverage](https://img.shields.io/badge/coverage-$($Coverage.ToString('#.##'))%25-$BadgeColor)"
                 } | Set-Content -Path $Readme
             }
-            Remove-Item .\DownloadInfo.Test.xml
+            Remove-Item $CodeCoverageDoc
             Pop-Location
         }
     }
