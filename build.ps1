@@ -68,7 +68,7 @@ Function New-DIMerge {
 Filter Publish-DIModule {
     <#
     .SYNOPSIS
-        Publish DownloadInfo module to PowerShell Gallery
+        Publish DownloadInfo module to PowerShell Gallery and GitHub
     .NOTES
         Precondition:
         1. The current branch does not have unstaged changes.
@@ -80,6 +80,7 @@ Filter Publish-DIModule {
         Push-Location $PSScriptRoot
         git branch --show-current |
         ForEach-Object {
+            $ModuleVersion = (& $DevDependencies.Manifest).ModuleVersion
             Try {
                 If ($null -eq $Env:NUGET_API_KEY) { 
                     Throw 'The NUGET_API_KEY environment variable is not set.'
@@ -89,6 +90,16 @@ Filter Publish-DIModule {
                 git switch $_ --quiet 2> $Null
                 git stash push --include-untracked --quiet
                 git switch pwsh-module --quiet
+                git push origin pwsh-module --force
+                If (!$?) { 
+                    git switch $_ --quiet 2> $Null
+                    git stash pop --quiet > $Null 2>&1
+                    Throw
+                }
+                If ("v$ModuleVersion" -inotin @(git tag --list)) {
+                    Invoke-Expression "git tag v$ModuleVersion"
+                    git push --tags
+                }
                 Publish-Module -Name DownloadInfo -NuGetApiKey $Env:NUGET_API_KEY
                 git switch $_ --quiet 2> $Null
                 git stash pop --quiet > $Null 2>&1
