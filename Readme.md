@@ -1,5 +1,5 @@
 # **DownloadInfo.psm1**
-![Module Version](https://img.shields.io/badge/version-v3.1.1-yellow) ![Test Coverage](https://img.shields.io/badge/coverage-98.35%25-green)
+![Module Version](https://img.shields.io/badge/version-v3.1.2-yellow) ![Test Coverage](https://img.shields.io/badge/coverage-98.35%25-green)
 ##### Author: Fabrice Sanga
 <br/>
 
@@ -106,3 +106,4 @@ The host server to get the information from.
 |Default value:| "Github" |
 |Accept pipeline input:| False |
 |Accept wildcard characters:| False |
+
