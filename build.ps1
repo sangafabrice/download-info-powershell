@@ -1,7 +1,7 @@
 $DevDependencies = @{
     Pester = '5.3.3';
     PlatyPS = '0.14.2';
-    Manifest = { Invoke-Expression "$(Get-Content .\DownloadInfo.psd1 -Raw)" }
+    Manifest = { Invoke-Expression "$(Get-Content "$PSScriptRoot\DownloadInfo.psd1" -Raw)" }
 }
 
 Function New-DIMerge {
@@ -13,13 +13,16 @@ Function New-DIMerge {
         1. The current branch is main
         2. Module files are modified in main
         3. The module manifest is modified
+    .OUTPUTS
+        Pester Test Details
     #>
 
     Param($CommitMessage)
 
     Push-Location $PSScriptRoot
     $Manifest = & $DevDependencies.Manifest
-    $ManifestFile = $Manifest.FileList | Where-Object {$_ -like '*.psd1'}
+    $FileList = $Manifest.FileList
+    $ManifestFile = $FileList | Where-Object {$_ -like '*.psd1'}
     If ($Null -eq $CommitMessage) {
         $CommitMessage = Switch ($Manifest.PrivateData.PSData.ReleaseNotes) {
             { ($_ -split "`n").Count -eq 1 } { "$_" }
@@ -27,89 +30,184 @@ Function New-DIMerge {
         }
     }
     Try {
-        If ((git branch --show-current) -ne 'main') { Throw }
-        ,(@(git diff --name-only --cached) + @(git diff --name-only) |
-        Select-Object -Unique) |
+        If ((git branch --show-current) -ne 'main') { Throw 'BranchNotMain' }
+        $GitDiffFiles = @(git diff --name-only --cached) + @(git diff --name-only)
+        If ($GitDiffFiles.Count -eq 0) { Throw }
+        ,($GitDiffFiles | Select-Object -Unique) |
         ForEach-Object {
-            If ($_.Count -eq $_.Where({$_ -in $Manifest.FileList}, 'Until').Count) { Throw }
-            If ($Null -eq ($_ | Where-Object { $_ -eq $ManifestFile })) { Throw }
+            If ($_.Count -eq $_.Where({$_ -in $FileList}, 'Until').Count) { Throw 'ModuleFilesNotModified' }
+            If ($Null -eq ($_ | Where-Object { $_ -eq $ManifestFile })) { Throw 'ModuleManifestNotModified' }
         }
         New-DITest
-        Invoke-Expression "git add $($Manifest.FileList) Readme.md"
-        Invoke-Expression "git commit --message '$CommitMessage' --quiet"
+        Invoke-Expression "git add $($FileList) Readme.md"
+        git commit --message "$CommitMessage" --quiet
         git stash push --include-untracked --quiet
         git switch pwsh-module --quiet 2> $Null
         If (!$?) {
             git stash pop --quiet > $Null 2>&1 
             Throw
         }
-        git merge --no-commit main
+        git merge --no-commit main > $Null 2>&1 
         $IsMergeError = !$?
         $CDPattern = "$($PWD -replace '\\','\\')\\"
         Get-ChildItem -Recurse -File |
-        Where-Object { ($_.FullName -replace $CDPattern) -inotin $Manifest.FileList } |
+        Where-Object { ($_.FullName -replace $CDPattern) -inotin $FileList } |
         Remove-Item
         Get-ChildItem -Directory |
-        Where-Object { ($_.FullName -replace $CDPattern) -inotin @($Manifest.FileList |
+        Where-Object { ($_.FullName -replace $CDPattern) -inotin @($FileList |
             Where-Object { $_ -like '*\*' } |
             ForEach-Object { ($_ -split '\\')[0] }) } |
         Remove-Item -Recurse -Force
-        If ($IsMergeError) { Throw 'MergeConflict' }
-        Invoke-Expression "git commit --all --message '$CommitMessage' --quiet"
+        If ($IsMergeError) {
+            ,@(git diff --name-only) |
+            ForEach-Object { If ($_ -in $FileList) { Throw 'MergeConflict' } }
+            git add .
+        }
+        git commit --message "$CommitMessage" --quiet
         git switch main --quiet 2> $Null
         git stash pop --quiet > $Null 2>&1
     }
-    Catch {
-        "ERROR: $($_.Exception.Message)"
-    }
+    Catch { "ERROR: $($_.Exception.Message)" }
     Pop-Location
 }
 
-Filter Publish-DIModule {
+Filter Invoke-OnModuleBranch {
     <#
     .SYNOPSIS
-        Publish DownloadInfo module to PowerShell Gallery and GitHub
+        Process a scriptblock on pwsh-module branch
     .NOTES
         Precondition:
         1. The current branch does not have unstaged changes.
-        2. The NUGET_API_KEY environment variable is set.
+        2. The script block does not modify pwsh-module
     #>
+
+    Param([Parameter(Mandatory=$true)] $ScriptBlock)
 
     Get-Module DownloadInfo -ListAvailable |
     ForEach-Object {
         Push-Location $PSScriptRoot
         git branch --show-current |
         ForEach-Object {
-            $ModuleVersion = (& $DevDependencies.Manifest).ModuleVersion
             Try {
-                If ($null -eq $Env:NUGET_API_KEY) { 
-                    Throw 'The NUGET_API_KEY environment variable is not set.'
-                }
                 git switch pwsh-module --quiet 2> $Null
-                If (!$?) { Throw }
+                If (!$?) { Throw "StayOn_$_" }
                 git switch $_ --quiet 2> $Null
                 git stash push --include-untracked --quiet
                 git switch pwsh-module --quiet
-                git push origin pwsh-module --force
-                If (!$?) { 
-                    git switch $_ --quiet 2> $Null
-                    git stash pop --quiet > $Null 2>&1
-                    Throw
-                }
-                If ("v$ModuleVersion" -inotin @(git tag --list)) {
-                    Invoke-Expression "git tag v$ModuleVersion"
-                    git push --tags
-                }
-                Publish-Module -Name DownloadInfo -NuGetApiKey $Env:NUGET_API_KEY
+                & $ScriptBlock
+            }
+            Catch { "ERROR: $($_.Exception.Message)" }
+            Finally {
                 git switch $_ --quiet 2> $Null
                 git stash pop --quiet > $Null 2>&1
             }
-            Catch { "ERROR: $($_.Exception.Message)" }
         }
         Pop-Location
     }
 }
 
+## TODO: Function must implement -WhatIf
+Filter Publish-DIModule {
+    <#
+    .SYNOPSIS
+        Publish module to PSGallery
+    .NOTES
+        Precondition:
+        1. The current branch is pwsh-module
+        2. The NUGET_API_KEY environment variable is set.
+    #>
+
+    Invoke-OnModuleBranch {
+        If ((git branch --show-current) -ne 'pwsh-module') { Throw }
+        If ($null -eq $Env:NUGET_API_KEY) { Throw 'NUGET_API_KEY_IsNull' }
+        @{
+            Name = 'DownloadInfo';
+            NuGetApiKey = $Env:NUGET_API_KEY;
+        } | ForEach-Object { Publish-Module @_ }
+        Write-Host "DownloadInfo@v$((& $DevDependencies.Manifest).ModuleVersion) published"
+    }
+}
+
+## TODO: Function must implement -WhatIf
+Filter Push-DIModule {
+    <#
+    .SYNOPSIS
+        Push new module commit to GitHub
+    .NOTES
+        Precondition:
+        1. The current branch is pwsh-module
+    .OUTPUTS
+        Push details
+    #>
+
+    Invoke-OnModuleBranch {
+        If ((git branch --show-current) -ne 'pwsh-module') { Throw 'BranchNotPwhModule' }
+        git push origin pwsh-module --force
+        If (!$?) { Throw 'PushModuleToGitHubFailed' }
+        "v$((& $DevDependencies.Manifest).ModuleVersion)" |
+        ForEach-Object {
+            If ($_ -inotin @(git tag --list)) {
+                git tag $_
+                git push --tags
+            }
+        }
+    }
+}
+
+Function New-DIRelease {
+    <#
+    .SYNOPSIS
+        Create new module release on GitHub
+    .NOTES
+        Precondition:
+        1. The current branch is main
+        2. gh must be installed
+        3. Module version tag is listed on Github
+        4. The release tag is not listed on Github
+    #>
+
+    Push-Location $PSScriptRoot
+    Try {
+        If ((git branch --show-current) -ne 'main') { Throw 'BranchNotMain' }
+        If ((where.exe gh.exe).Count -eq 0) { Throw 'GithubCliNotFoundOnPath' }
+        $Manifest = & $DevDependencies.Manifest
+        Switch ("v$($Manifest.ModuleVersion)") {
+            {$_ -inotin @(git ls-remote --tags origin |
+            ForEach-Object { ($_ -split '/')[-1] })} { Throw 'TagNotListedOnGithub' }
+            {$_ -in @(gh release list |
+            ConvertFrom-String | ForEach-Object { $_.P1 })} { Throw 'ReleaseTagExistsOnGitHub' }
+            Default {
+                gh release create $_ --notes @"
+- [x] $(((Get-Content .\Readme.md -TotalCount 2 |
+Where-Object {$_ -like '*`[Test Coverage`]*'}) -split ' ',3)[2])
+$($Manifest.PrivateData.PSData.ReleaseNotes -split "`n" |
+ForEach-Object { "- [x] $_" } |
+Out-String)
+"@
+            }
+        }
+    }
+    Catch { "ERROR: $($_.Exception.Message)" }
+    Pop-Location
+}
+
+Filter Deploy-DIModule {
+    <#
+    .SYNOPSIS
+        Deploy module Everywhere
+    #>
+
+    $CheckMain = { If ((git branch --show-current) -ne 'main') { Throw 'BranchNotMain' } }
+    Try {
+        & $CheckMain
+        New-DIMerge
+        & $CheckMain
+        Push-DIModule
+        New-DIRelease
+        Publish-DIModule
+    }
+    Catch { "ERROR: $($_.Exception.Message)" }
+}
 
 Function Update-DIHelp {
     <#
@@ -182,7 +280,8 @@ Function New-DITest {
                     {$_ -gt 60 -and $_ -le 75}  { 'orange' }
                     Default { 'red' }
                 }
-                Get-Content $Readme -Raw |
+                ,@(Get-Content $Readme) |
+                ForEach-Object { $_ | Select-Object -First ($_.Count -1) } |
                 Out-String | ForEach-Object {
                     $_ -replace '!\[Module Version\].+\)', "![Module Version](https://img.shields.io/badge/version-v$($Manifest.ModuleVersion)-yellow) ![Test Coverage](https://img.shields.io/badge/coverage-$($Coverage.ToString('#.##'))%25-$BadgeColor)"
                 } | Set-Content -Path $Readme
