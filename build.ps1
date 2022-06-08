@@ -348,3 +348,26 @@ Filter Install-BuildDependencies {
         & $_ PlatyPS
     }
 }
+
+Filter New-DIJunction {
+    <#
+    .SYNOPSIS
+        Create the DownloadInfo Junction in PSModulePath
+    #>
+
+    Param([switch] $Force)
+
+    $FirstPath = "$(($env:PSModulePath -split ';')[0])\DownloadInfo"
+    If (Test-Path $FirstPath) {
+        If ($Force) {
+            Remove-Item $FirstPath -Force
+        } Else {
+            Return 'DownloadInfo junction already exists'
+        }
+    }
+    @{
+        Path = $FirstPath;
+        ItemType = 'Junction';
+        Value = $PSScriptRoot
+    } | ForEach-Object { New-Item @_ }
+}
