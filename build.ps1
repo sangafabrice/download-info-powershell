@@ -1,6 +1,32 @@
 $DevDependencies = @{
     Pester = '5.3.3';
     PlatyPS = '0.14.2';
+    ExtensionsNuspec = [xml] @"
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+<metadata>
+    <id>download-info.extension</id>
+    <version></version>
+    <packageSourceUrl>https://github.com/sangafabrice/download-info</packageSourceUrl>
+    <owners>Fabrice Sanga</owners>
+    <title></title>
+    <authors>sangafabrice</authors>
+    <projectUrl>https://github.com/sangafabrice/download-info</projectUrl>
+    <iconUrl>https://i.ibb.co/6wkd3Jy/shim-1.jpg</iconUrl>
+    <copyright></copyright>
+    <licenseUrl>https://github.com/sangafabrice/download-info/blob/main/LICENSE.md</licenseUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <projectSourceUrl>https://github.com/sangafabrice/download-info</projectSourceUrl>
+    <docsUrl>https://github.com/sangafabrice/download-info/blob/main/Readme.md</docsUrl>
+    <tags>download-info extension github omaha sourceforge</tags>
+    <description>Download information relative to updating an application hosted on GitHub, Omaha and SourceForge.</description>
+    <releaseNotes></releaseNotes>
+</metadata>
+<files>
+    <file src="extensions\**" target="extensions" />
+</files>
+</package>
+"@
     Manifest = { Invoke-Expression "$(Get-Content "$PSScriptRoot\DownloadInfo.psd1" -Raw)" }
 }
 
@@ -118,7 +144,7 @@ Filter Publish-DIModule {
     #>
 
     Invoke-OnModuleBranch {
-        If ((git branch --show-current) -ne 'pwsh-module') { Throw }
+        If ((git branch --show-current) -ne 'pwsh-module') { Throw 'BranchNotPwshModule' }
         If ($null -eq $Env:NUGET_API_KEY) { Throw 'NUGET_API_KEY_IsNull' }
         @{
             Name = 'DownloadInfo';
@@ -154,7 +180,79 @@ Filter Push-DIModule {
     }
 }
 
-Function New-DIRelease {
+Filter New-DIChocoExtension {
+    <#
+    .SYNOPSIS
+        Create a nuget package to be used as chocolatey extensions
+    .NOTES
+        Precondition:
+        1. The current branch is main
+        2. choco must be installed
+    #>
+
+    Push-Location $PSScriptRoot
+    Try {
+        If ((git branch --show-current) -ne 'main') { Throw 'BranchNotMain' }
+        If ((where.exe choco.exe).Count -eq 0) { Throw 'ChocoNotFoundOnPath' }
+        $Manifest = & $DevDependencies.Manifest
+        $ModuleVersion = $Manifest.ModuleVersion
+        $Nuspec = $DevDependencies.ExtensionsNuspec
+        $ExtensionId = $Nuspec.package.metadata.id
+        ${DIExtension\Extensions} = "$ExtensionId\extensions"
+        $NuspecPath = "$("$ExtensionId\$ExtensionId").nuspec"
+        @{
+            Path = ${DIExtension\Extensions};
+            ItemType = 'Directory';
+            ErrorAction = 'SilentlyContinue'
+        } | ForEach-Object { New-Item @_ | Out-Null }
+        @{
+            Path = ".\$($Manifest.FileList | Where-Object {$_ -like '*.psm1'})";
+            Destination = "${DIExtension\Extensions}\$($ExtensionId -replace '\.extension').psm1"
+        } | ForEach-Object { Copy-Item @_ }
+        $Nuspec.package.metadata |
+        ForEach-Object {
+            $_.version = $ModuleVersion
+            $_.title = "$(((Get-Culture).TextInfo.ToTitleCase($_.id) -replace '\-') -replace '\.',' ') $($ModuleVersion)"
+            $_.copyright = $Manifest.Copyright
+            $_.releaseNotes = $Manifest.PrivateData.PSData.ReleaseNotes
+        }
+        @{
+            Path = $NuspecPath;
+            Value = $Nuspec.OuterXml
+        } | ForEach-Object { Set-Content @_ }
+        choco pack $NuspecPath --outputdirectory . > $Null
+        If (!$?) { Throw "ChocoExtensionCreationFailed" }
+        Remove-Item $ExtensionId -Recurse -Force
+        "$ExtensionId.$ModuleVersion.nupkg"
+    }
+    Catch { "ERROR: $($_.Exception.Message)" }
+    Pop-Location
+}
+
+Filter Publish-DIChocoExtension {
+    <#
+    .SYNOPSIS
+        Publish chocolatey extension to Community repository
+    .NOTES
+        Precondition:
+        1. The current branch is main
+        2. The CHOCO_API_KEY environment variable is set.
+    #>
+
+    Param([Parameter(Mandatory=$true)] $NugetPackage)
+
+    Try {
+        If ($null -eq $Env:CHOCO_API_KEY) { Throw 'CHOCO_API_KEY_IsNull' }
+        If ((where.exe choco.exe).Count -eq 0) { Throw 'ChocoNotFoundOnPath' }
+        choco apikey --key $Env:CHOCO_API_KEY --source https://push.chocolatey.org/
+        If (!$?) { Throw }
+        choco push $NugetPackage --source https://push.chocolatey.org/
+        If (!$?) { Throw }
+    }
+    Catch { "ERROR: $($_.Exception.Message)" }
+}
+
+Filter New-DIRelease {
     <#
     .SYNOPSIS
         Create new module release on GitHub
@@ -165,6 +263,8 @@ Function New-DIRelease {
         3. Module version tag is listed on Github
         4. The release tag is not listed on Github
     #>
+
+    Param($Files)
 
     Push-Location $PSScriptRoot
     Try {
@@ -177,7 +277,7 @@ Function New-DIRelease {
             {$_ -in @(gh release list |
             ConvertFrom-String | ForEach-Object { $_.P1 })} { Throw 'ReleaseTagExistsOnGitHub' }
             Default {
-                gh release create $_ --notes @"
+                gh release create $_ $Files --notes @"
 - [x] $(((Get-Content .\Readme.md -TotalCount 2 |
 Where-Object {$_ -like '*`[Test Coverage`]*'}) -split ' ',3)[2])
 $($Manifest.PrivateData.PSData.ReleaseNotes -split "`n" |
@@ -197,13 +297,19 @@ Filter Deploy-DIModule {
         Deploy module Everywhere
     #>
 
-    $CheckMain = { If ((git branch --show-current) -ne 'main') { Throw 'BranchNotMain' } }
     Try {
-        & $CheckMain
-        New-DIMerge
-        & $CheckMain
+        { If ((git branch --show-current) -ne 'main') { Throw 'BranchNotMain' } } |
+        ForEach-Object {
+            & $_
+            New-DIMerge
+            & $_
+        }
         Push-DIModule
-        New-DIRelease
+        New-DIChocoExtension |
+        ForEach-Object {
+            New-DIRelease $_
+            Publish-DIChocoExtension $_
+        }
         Publish-DIModule
     }
     Catch { "ERROR: $($_.Exception.Message)" }
