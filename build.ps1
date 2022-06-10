@@ -37,14 +37,12 @@ Filter New-DIManifest {
         Create module manifest
     .NOTES
         Precondition:
-        1. The current branch is main
-        2. latest.json exists
+        1. latest.json exists
     #>
 
     $GithubRepo = $DevDependencies.RemoteRepo
     $ModuleName = 'DownloadInfo'
     Push-Location $PSScriptRoot
-    If ((git branch --show-current) -ne 'main') { Throw 'BranchNotMain' }
     Get-Content .\latest.json -Raw |
     ConvertFrom-Json |
     ForEach-Object {
