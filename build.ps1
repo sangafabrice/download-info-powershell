@@ -1,36 +1,86 @@
 $DevDependencies = @{
     Pester = '5.3.3';
     PlatyPS = '0.14.2';
-    ExtensionsNuspec = [xml] @"
+    ExtensionsNuspec = [xml] @'
 <?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
 <metadata>
     <id>download-info.extension</id>
     <version></version>
-    <packageSourceUrl>https://github.com/sangafabrice/download-info</packageSourceUrl>
+    <packageSourceUrl></packageSourceUrl>
     <owners>Fabrice Sanga</owners>
     <title></title>
     <authors>sangafabrice</authors>
-    <projectUrl>https://github.com/sangafabrice/download-info</projectUrl>
-    <iconUrl>https://i.ibb.co/6wkd3Jy/shim-1.jpg</iconUrl>
+    <projectUrl></projectUrl>
+    <iconUrl></iconUrl>
     <copyright></copyright>
-    <licenseUrl>https://github.com/sangafabrice/download-info/blob/main/LICENSE.md</licenseUrl>
+    <licenseUrl></licenseUrl>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
-    <projectSourceUrl>https://github.com/sangafabrice/download-info</projectSourceUrl>
-    <docsUrl>https://github.com/sangafabrice/download-info/blob/main/Readme.md</docsUrl>
+    <projectSourceUrl></projectSourceUrl>
+    <docsUrl></docsUrl>
     <tags>download-info extension github omaha sourceforge</tags>
-    <description>Download information relative to updating an application hosted on GitHub, Omaha and SourceForge.</description>
+    <description></description>
     <releaseNotes></releaseNotes>
 </metadata>
 <files>
     <file src="extensions\**" target="extensions" />
 </files>
 </package>
-"@
+'@;
+    RemoteRepo = (git ls-remote --get-url) -replace '\.git$';
     Manifest = { Invoke-Expression "$(Get-Content "$PSScriptRoot\DownloadInfo.psd1" -Raw)" }
 }
 
-Function New-DIMerge {
+Filter New-DIManifest {
+    <#
+    .SYNOPSIS
+        Create module manifest
+    .NOTES
+        Precondition:
+        1. The current branch is main
+        2. latest.json exists
+    #>
+
+    $GithubRepo = $DevDependencies.RemoteRepo
+    $ModuleName = 'DownloadInfo'
+    Push-Location $PSScriptRoot
+    If ((git branch --show-current) -ne 'main') { Throw 'BranchNotMain' }
+    Get-Content .\latest.json -Raw |
+    ConvertFrom-Json |
+    ForEach-Object {
+        @{
+            Path = "$ModuleName.psd1"
+            RootModule = "$ModuleName.psm1"
+            ModuleVersion = $_.version
+            GUID = '63f08017-49ae-4ae7-b7f1-76cf9366f8da'
+            Author = 'Fabrice Sanga'
+            CompanyName = 'sangafabrice'
+            Copyright = "(c) $((Get-Date).Year) SangaFabrice. All rights reserved."
+            Description = 'Download information relative to updating an application hosted on GitHub, Omaha and SourceForge.'
+            PowerShellVersion = '5.0'
+            PowerShellHostVersion = '5.0'
+            FunctionsToExport = @('Get-DownloadInfo')
+            CmdletsToExport = @()
+            VariablesToExport = @()
+            AliasesToExport = @()
+            FileList = @("en-US\$ModuleName-help.xml","$ModuleName.psm1","$ModuleName.psd1")
+            Tags = @('GitHub','Omaha','Sourceforge','DownloadInfo','Update')
+            LicenseUri = "$GithubRepo/blob/main/LICENSE.md"
+            ProjectUri = $GithubRepo
+            IconUri = 'https://i.ibb.co/6wkd3Jy/shim-1.jpg'
+            ReleaseNotes = $_.releaseNotes -join "`n"
+        }
+    } | ForEach-Object {
+        New-ModuleManifest @_
+        (Get-Content $_.Path |
+        Where-Object { $_ -match '.+' } |
+        Where-Object { $_ -notmatch '^\s*#\.*' }) -replace ' # End of .+' -replace ", '",",'" |
+        Out-File "$ModuleName.psd1"
+    }
+    Pop-Location
+}
+
+Filter New-DIMerge {
     <#
     .SYNOPSIS
         Merge pwsh-module into main
@@ -46,17 +96,19 @@ Function New-DIMerge {
     Param($CommitMessage)
 
     Push-Location $PSScriptRoot
-    $Manifest = & $DevDependencies.Manifest
-    $FileList = $Manifest.FileList
-    $ManifestFile = $FileList | Where-Object {$_ -like '*.psd1'}
-    If ($Null -eq $CommitMessage) {
-        $CommitMessage = Switch ($Manifest.PrivateData.PSData.ReleaseNotes) {
-            { ($_ -split "`n").Count -eq 1 } { "$_" }
-            Default { "RELEASE: v$($Manifest.ModuleVersion)" }
-        }
-    }
     Try {
         If ((git branch --show-current) -ne 'main') { Throw 'BranchNotMain' }
+        New-DIManifest
+        $Manifest = & $DevDependencies.Manifest
+        $FileList = $Manifest.FileList
+        $ManifestFile = $FileList | Where-Object {$_ -like '*.psd1'}
+        Test-ModuleManifest $ManifestFile
+        If ($Null -eq $CommitMessage) {
+            $CommitMessage = Switch ($Manifest.PrivateData.PSData.ReleaseNotes) {
+                { ($_ -split "`n").Count -eq 1 } { "$_" }
+                Default { "RELEASE: v$($Manifest.ModuleVersion)" }
+            }
+        }
         $GitDiffFiles = @(git diff --name-only --cached) + @(git diff --name-only)
         If ($GitDiffFiles.Count -eq 0) { Throw }
         ,($GitDiffFiles | Select-Object -Unique) |
@@ -200,6 +252,7 @@ Filter New-DIChocoExtension {
         $ExtensionId = $Nuspec.package.metadata.id
         ${DIExtension\Extensions} = "$ExtensionId\extensions"
         $NuspecPath = "$("$ExtensionId\$ExtensionId").nuspec"
+        $GithubRepo = $DevDependencies.RemoteRepo
         @{
             Path = ${DIExtension\Extensions};
             ItemType = 'Directory';
@@ -212,9 +265,16 @@ Filter New-DIChocoExtension {
         $Nuspec.package.metadata |
         ForEach-Object {
             $_.version = $ModuleVersion
-            $_.title = "$(((Get-Culture).TextInfo.ToTitleCase($_.id) -replace '\-') -replace '\.',' ') $($ModuleVersion)"
+            $_.title = (Get-Culture).TextInfo.ToTitleCase($_.id) -replace '\-' -replace '\.',' '
             $_.copyright = $Manifest.Copyright
             $_.releaseNotes = $Manifest.PrivateData.PSData.ReleaseNotes
+            $_.iconUrl = $Manifest.PrivateData.PSData.IconUri
+            $_.projectUrl = $GithubRepo
+            $_.licenseUrl = "$GithubRepo/blob/main/LICENSE.md"
+            $_.docsUrl = "$GithubRepo/blob/main/Readme.md"
+            $_.packageSourceUrl = "$GithubRepo/releases/download/v$ModuleVersion/$ExtensionId.$ModuleVersion.nupkg"
+            $_.projectSourceUrl = "$GithubRepo/tree/pwsh-module"
+            $_.description = $Manifest.Description
         }
         @{
             Path = $NuspecPath;
