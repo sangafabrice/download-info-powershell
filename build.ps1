@@ -367,6 +367,7 @@ Filter Deploy-DIModule {
         ForEach-Object {
             New-DIRelease $_
             Publish-DIChocoExtension $_
+            Remove-Item $_
         }
         Publish-DIModule
     }
