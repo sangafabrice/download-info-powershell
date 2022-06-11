@@ -29,10 +29,10 @@ Process {
 
             BeforeAll {
                 $TestPptyList = @{
-                    UpdateServiceURL = "Update Service URL";
-                    ApplicationID = "ApplicationID";
-                    OwnerBrand = "Owner Brand";
-                    ApplicationSpec = "ApplicationSpec"
+                    UpdateServiceURL = 'Update Service URL';
+                    ApplicationID = 'ApplicationID';
+                    OwnerBrand = 'Owner Brand';
+                    ApplicationSpec = 'ApplicationSpec'
                 }
                 Mock 'Invoke-WebRequest' { }
             }
@@ -46,7 +46,7 @@ Process {
                 BeforeAll { Mock 'Set-Variable' { } }
 
                 BeforeEach {
-                    $TestPath = "TestDrive:\test.toml"
+                    $TestPath = 'TestDrive:\test.toml'
                     $TestKey = 'UpdateURL'
                 }
 
@@ -54,18 +54,18 @@ Process {
 
                     It 'Test conversion from hash key to variable' -TestCases @(
                         @{ PropertyList = @{ 
-                            RepositoryId = ""
-                            AssetPattern = "" 
+                            RepositoryId = ''
+                            AssetPattern = '' 
                         } }
                         @{ PropertyList = @{
-                            UpdateServiceURL = ""
-                            ApplicationID = ""
-                            OwnerBrand = ""
-                            ApplicationSpec = ""
+                            UpdateServiceURL = ''
+                            ApplicationID = ''
+                            OwnerBrand = ''
+                            ApplicationSpec = ''
                         } }
                         @{ PropertyList = @{
-                            RepositoryId = ""
-                            PathFromVersion = ""
+                            RepositoryId = ''
+                            PathFromVersion = ''
                         } }
                     ) {
 
@@ -78,9 +78,9 @@ Process {
                     }
         
                     It 'Test conversion from hash value to variable value' -TestCases @(
-                        @{ PropertyList = @{ RepositoryId = "RepositoryId" } }
+                        @{ PropertyList = @{ RepositoryId = 'RepositoryId' } }
                         @{ PropertyList = @{ OwnerBrand = 2101 } }
-                        @{ PropertyList = @{ PathFromVersion = "" } }
+                        @{ PropertyList = @{ PathFromVersion = '' } }
                     ) {
 
                         Param($PropertyList)
@@ -186,23 +186,23 @@ $TestKey="value0"
 
                 It 'Test Omaha request body and URI' -TestCases @(
                     @{ 
-                        AppID="{8A69D345-D564-463c-AFF1-A69D9E530F96}"
-                        Brand="GGLS"
-                        Spec="stable-arch_x86-statsdef_1"
+                        AppID='{8A69D345-D564-463c-AFF1-A69D9E530F96}'
+                        Brand='GGLS'
+                        Spec='stable-arch_x86-statsdef_1'
                     }
                     @{ 
-                        AppID="{8A69D345-D564-463c-AFF1-A69D9E530F96}"
-                        Brand="YTUH"
-                        Spec="x64-stable-statsdef_1"
+                        AppID='{8A69D345-D564-463c-AFF1-A69D9E530F96}'
+                        Brand='YTUH'
+                        Spec='x64-stable-statsdef_1'
                     }
                     @{ 
-                        AppID="{A8504530-742B-42BC-895D-2BAD6406F698}"
-                        Brand="2101"
+                        AppID='{A8504530-742B-42BC-895D-2BAD6406F698}'
+                        Brand='2101'
                     }
                     @{ 
-                        AppID="{A8504530-742B-42BC-895D-2BAD6406F698}"
-                        Brand="2101"
-                        Arch="x86"
+                        AppID='{A8504530-742B-42BC-895D-2BAD6406F698}'
+                        Brand='2101'
+                        Arch='x86'
                     }
                 ) {
 

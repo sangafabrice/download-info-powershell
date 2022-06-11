@@ -53,7 +53,7 @@ Filter New-DIManifest {
             GUID = '63f08017-49ae-4ae7-b7f1-76cf9366f8da'
             Author = 'Fabrice Sanga'
             CompanyName = 'sangafabrice'
-            Copyright = "(c) $((Get-Date).Year) SangaFabrice. All rights reserved."
+            Copyright = "© $((Get-Date).Year) SangaFabrice. All rights reserved."
             Description = 'Download information relative to updating an application hosted on GitHub, Omaha and SourceForge.'
             PowerShellVersion = '5.0'
             PowerShellHostVersion = '5.0'
