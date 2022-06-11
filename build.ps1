@@ -115,7 +115,7 @@ Filter New-DIMerge {
             If ($Null -eq ($_ | Where-Object { $_ -eq $ManifestFile })) { Throw 'ModuleManifestNotModified' }
         }
         New-DITest
-        Invoke-Expression "git add $($FileList) Readme.md"
+        Invoke-Expression "git add $($FileList) DownloadInfo.Tests.ps1 latest.json Readme.md"
         git commit --message "$CommitMessage" --quiet
         git stash push --include-untracked --quiet
         git switch pwsh-module --quiet 2> $Null
