@@ -1,8 +1,6 @@
 {
-    "version": "3.1.4",
+    "version": "3.1.5",
     "releaseNotes": [
-        "Generate module manifest with cmdlet.",
-        "Compatible with chocolatey extension package.",
-        "Generate version to update chocolatey extension."
+        "Add ability to mock OS Architecture in Omaha request."
     ]
 }

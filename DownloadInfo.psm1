@@ -100,7 +100,10 @@ Function Get-DownloadInfo {
                         <os
                         platform="win"
                         version="$([Environment]::OSVersion.Version)"
-                        arch="$(If([Environment]::Is64BitOperatingSystem){'x64'}Else{'x86'})"/>
+                        arch="$(Switch ($OSArch) {
+                            {$_ -in @('x86','x64')} { $_ }
+                            Default { If ([Environment]::Is64BitOperatingSystem) { 'x64' } Else { 'x86' } }
+                        })"/>
                         <app
                         appid=""
                         version=""

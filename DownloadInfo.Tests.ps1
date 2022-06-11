@@ -199,12 +199,18 @@ $TestKey="value0"
                         AppID="{A8504530-742B-42BC-895D-2BAD6406F698}"
                         Brand="2101"
                     }
+                    @{ 
+                        AppID="{A8504530-742B-42BC-895D-2BAD6406F698}"
+                        Brand="2101"
+                        Arch="x86"
+                    }
                 ) {
 
                     Param(
                         $AppID,
                         $Brand,
-                        $Spec
+                        $Spec,
+                        $Arch
                     )
 
                     $ServiceUrl = 'service/update2'
@@ -213,12 +219,14 @@ $TestKey="value0"
                         ApplicationID = $AppID
                         OwnerBrand = $Brand
                         ApplicationSpec = $Spec
+                        OSArch = $Arch
                     } -From Omaha
                     Should -Invoke 'Invoke-WebRequest' -ParameterFilter {
                         $Request = ([xml] $Body).request
                         ($Request | Select-Xml '//@appid').Node.Value -eq $AppID
                         ($Request | Select-Xml '//@brand').Node.Value -eq $Brand
                         ($Request | Select-Xml '//@ap').Node.Value -eq $Spec
+                        If ($Null -ne $Arch) { ($Request | Select-Xml '//@arch').Node.Value -eq $Arch }
                         $Uri -eq $ServiceUrl
                     }
                 }
@@ -338,6 +346,16 @@ $TestKey="value0"
                                 Link_Length = 1
                                 Checksum = '4BD6F4DF5B9776569225AD9EB5F929A459942EE08DB4AFB833A9F02F85CBD394'
                                 Size = 95350968
+                            }
+                        }
+                        @{ 
+                            Content = 'secure32.xml'
+                            UpdateInfo = @{
+                                Version = '102.0.16815.63'
+                                Link_0 = 'https://browser-update.avast.com/browser/win/x86/102.0.16815.63/AvastBrowserInstaller.exe'
+                                Link_Length = 1
+                                Checksum = '7EE73EF78AACDA80763A22B5FD552EDB17B9EDA58A83014072806DBD7290ACD1'
+                                Size = 92392352
                             }
                         }
                     ) {

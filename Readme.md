@@ -1,5 +1,5 @@
 # **DownloadInfo.psm1**
-![Module Version](https://img.shields.io/badge/version-v3.1.4-yellow) ![Test Coverage](https://img.shields.io/badge/coverage-98.35%25-green)
+![Module Version](https://img.shields.io/badge/version-v3.1.5-yellow) ![Test Coverage](https://img.shields.io/badge/coverage-98.4%25-green)
 ##### Author: Fabrice Sanga
 <br/>
 
