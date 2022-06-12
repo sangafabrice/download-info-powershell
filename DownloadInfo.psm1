@@ -141,20 +141,20 @@ Function Get-DownloadInfo {
                             Select-Object -Unique
                         }
                     } | Select-Object -Property @{
-                        Name = "Version";
+                        Name = 'Version';
                         Expression = { & $_ '//@version' }
                     },@{
-                        Name = "Link";
+                        Name = 'Link';
                         Expression = {
                             $SetupName = & $_ '//@name'
                             & $_ '//@codebase' | 
                             ForEach-Object { [uri] "$_$(If ($_[-1] -ne '/') {'/'})$SetupName" }
                         }
                     },@{
-                        Name = "Checksum";
+                        Name = 'Checksum';
                         Expression = { (& $_ '//@hash_sha256').ToUpper() }
                     },@{
-                        Name = "Size";
+                        Name = 'Size';
                         Expression = { & $_ '//@size' }
                     }
                 }
