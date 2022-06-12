@@ -1,6 +1,10 @@
 {
-    "version": "3.1.5",
+    "version": "3.1.6",
     "releaseNotes": [
-        "Add ability to mock OS Architecture in Omaha request."
+        "Changes to comply with Chocolatey guidelines:",
+        "+ Change module logo location and format.",
+        "+ Change packageSourceUrl value in nuspec.",
+        "+ Copy description to summary tag in nuspec.",
+        "Fix code style inconsistency."
     ]
 }
