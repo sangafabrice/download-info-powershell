@@ -358,6 +358,8 @@ Filter Deploy-DIModule {
         Deploy module Everywhere
     #>
 
+    Param([ValidateSet('ChocoCom', 'PSGallery')] $Only)
+
     Try {
         { If ((git branch --show-current) -ne 'main') { Throw 'BranchNotMain' } } |
         ForEach-Object {
@@ -369,10 +371,10 @@ Filter Deploy-DIModule {
         New-DIChocoExtension |
         ForEach-Object {
             New-DIRelease $_
-            Publish-DIChocoExtension $_
+            If ($Only -in @($Null, 'ChocoCom')) { Publish-DIChocoExtension $_ }
             Remove-Item $_
         }
-        Publish-DIModule
+        If ($Only -in @($Null, 'PSGallery')) { Publish-DIModule }
     }
     Catch { "ERROR: $($_.Exception.Message)" }
 }
@@ -477,6 +479,7 @@ Filter Install-BuildDependencies {
             $Name,
             $PreInstall
         )
+        
         If ((Get-Module $Name -ListAvailable |
         Where-Object Version -eq $DevDependencies[$Name]).Count -eq 0) {
             If ($Null -ne $PreInstall) { & $PreInstall }
