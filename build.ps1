@@ -20,6 +20,7 @@ $DevDependencies = @{
     <docsUrl></docsUrl>
     <tags>download-info extension github omaha sourceforge</tags>
     <description></description>
+    <summary></summary>
     <releaseNotes></releaseNotes>
 </metadata>
 <files>
@@ -65,7 +66,7 @@ Filter New-DIManifest {
             Tags = @('GitHub','Omaha','Sourceforge','DownloadInfo','Update')
             LicenseUri = "$GithubRepo/blob/main/LICENSE.md"
             ProjectUri = $GithubRepo
-            IconUri = 'https://i.ibb.co/6wkd3Jy/shim-1.jpg'
+            IconUri = 'https://rawcdn.githack.com/sangafabrice/download-info/40b231818d787d68d60f8f65d13b69dc02031ae1/icon.png'
             ReleaseNotes = $_.releaseNotes -join "`n"
         }
     } | ForEach-Object {
@@ -251,6 +252,7 @@ Filter New-DIChocoExtension {
         ${DIExtension\Extensions} = "$ExtensionId\extensions"
         $NuspecPath = "$("$ExtensionId\$ExtensionId").nuspec"
         $GithubRepo = $DevDependencies.RemoteRepo
+        $Description = $Manifest.Description
         @{
             Path = ${DIExtension\Extensions};
             ItemType = 'Directory';
@@ -270,9 +272,10 @@ Filter New-DIChocoExtension {
             $_.projectUrl = $GithubRepo
             $_.licenseUrl = "$GithubRepo/blob/main/LICENSE.md"
             $_.docsUrl = "$GithubRepo/blob/main/Readme.md"
-            $_.packageSourceUrl = "$GithubRepo/releases/download/v$ModuleVersion/$ExtensionId.$ModuleVersion.nupkg"
-            $_.projectSourceUrl = "$GithubRepo/tree/pwsh-module"
-            $_.description = $Manifest.Description
+            $_.packageSourceUrl = $GithubRepo
+            $_.projectSourceUrl = $GithubRepo
+            $_.description = $Description
+            $_.summary = $Description
         }
         @{
             Path = $NuspecPath;
