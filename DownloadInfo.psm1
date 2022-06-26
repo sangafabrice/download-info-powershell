@@ -109,7 +109,7 @@ Function Get-DownloadInfo {
                         version=""
                         nextversion=""
                         ap="" 
-                        lang="$((Get-WinSystemLocale).Name)"
+                        lang="$((Get-Culture).Name)"
                         brand="">
                             <updatecheck/>
                         </app>
