@@ -1,10 +1,6 @@
 {
-    "version": "3.1.6",
+    "version": "3.1.7",
     "releaseNotes": [
-        "Changes to comply with Chocolatey guidelines:",
-        "+ Change module logo location and format.",
-        "+ Change packageSourceUrl value in nuspec.",
-        "+ Copy description to summary tag in nuspec.",
-        "Fix code style inconsistency."
+        "Change cmdlet to retrieve culture"
     ]
 }
