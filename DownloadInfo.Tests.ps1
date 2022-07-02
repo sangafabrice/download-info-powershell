@@ -33,6 +33,7 @@ Process {
                     ApplicationID = 'ApplicationID';
                     OwnerBrand = 'Owner Brand';
                     ApplicationSpec = 'ApplicationSpec'
+                    Protocol = '3.1'
                 }
                 Mock 'Invoke-WebRequest' { }
             }
@@ -204,6 +205,16 @@ $TestKey="value0"
                         Brand='2101'
                         Arch='x86'
                     }
+                    @{ 
+                        AppID='{AFE6A462-C574-4B8A-AF43-4CC60DF4563B}'
+                        Spec='x64-rel'
+                        Protocol='3.0'
+                    }
+                    @{ 
+                        AppID='{AFE6A462-C574-4B8A-AF43-4CC60DF4563B}'
+                        Spec='x86-rel'
+                        Protocol='3.0'
+                    }
                 ) {
 
                     Param(
@@ -220,12 +231,14 @@ $TestKey="value0"
                         OwnerBrand = $Brand
                         ApplicationSpec = $Spec
                         OSArch = $Arch
+                        Protocol = $Protocol
                     } -From Omaha
                     Should -Invoke 'Invoke-WebRequest' -ParameterFilter {
                         $Request = ([xml] $Body).request
                         ($Request | Select-Xml '//@appid').Node.Value -eq $AppID
                         ($Request | Select-Xml '//@brand').Node.Value -eq $Brand
                         ($Request | Select-Xml '//@ap').Node.Value -eq $Spec
+                        ($Request | Select-Xml '//@protocol').Node.Value -eq $Protocol
                         If ($Null -ne $Arch) { ($Request | Select-Xml '//@arch').Node.Value -eq $Arch }
                         $Uri -eq $ServiceUrl
                     }
@@ -356,6 +369,26 @@ $TestKey="value0"
                                 Link_Length = 1
                                 Checksum = '7EE73EF78AACDA80763A22B5FD552EDB17B9EDA58A83014072806DBD7290ACD1'
                                 Size = 92392352
+                            }
+                        }
+                        @{ 
+                            Content = 'brave.xml'
+                            UpdateInfo = @{
+                                Version = '103.1.40.109'
+                                Link_0 = 'https://updates-cdn.bravesoftware.com/build/Brave-Release/x64-rel/win/103.1.40.109/brave_installer-x64.exe'
+                                Link_Length = 1
+                                Checksum = 'FF361AD335B58BC5F39069507713ECE58C0B5E8B445FA8E7A1D512BD83488396'
+                                Size = 98383280
+                            }
+                        }
+                        @{ 
+                            Content = 'brave32.xml'
+                            UpdateInfo = @{
+                                Version = '103.1.40.109'
+                                Link_0 = 'https://updates-cdn.bravesoftware.com/build/Brave-Release/x86-rel/win/103.1.40.109/brave_installer-ia32.exe'
+                                Link_Length = 1
+                                Checksum = '02939F52DFF3D775E3191C746D97FF767D25624F052FE76716CCF08BCC912482'
+                                Size = 93553584
                             }
                         }
                     ) {
