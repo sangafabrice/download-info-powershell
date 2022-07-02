@@ -95,11 +95,24 @@ Function Get-DownloadInfo {
     
                 $RequestBody = [xml] @"
                     <request
-                    protocol="3.1"
-                    updater="Omaha">
+                    protocol="$(Switch ($Protocol) {
+                        { ![string]::IsNullOrEmpty($_) } { $_ }
+                        Default { '3.1' }
+                    })"
+                    updater="Omaha"
+                    updaterversion="0"
+                    shell_version="0"
+                    ismachine="1"
+                    sessionid="{00000000-0000-0000-0000-000000000000}"
+                    installsource="taggedmi"
+                    testsource="auto"
+                    requestid="{00000000-0000-0000-0000-000000000000}"
+                    dedup="cr"
+                    domainjoined="0">
                         <os
                         platform="win"
                         version="$([Environment]::OSVersion.Version)"
+                        sp=""
                         arch="$(Switch ($OSArch) {
                             {$_ -in @('x86','x64')} { $_ }
                             Default { If ([Environment]::Is64BitOperatingSystem) { 'x64' } Else { 'x86' } }
@@ -110,7 +123,10 @@ Function Get-DownloadInfo {
                         nextversion=""
                         ap="" 
                         lang="$((Get-Culture).Name)"
-                        brand="">
+                        brand=""
+                        client=""
+                        installage="-1"
+                        installdate="-1">
                             <updatecheck/>
                         </app>
                     </request>

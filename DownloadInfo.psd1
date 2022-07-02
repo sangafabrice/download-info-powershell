@@ -1,6 +1,6 @@
 @{
 RootModule = 'DownloadInfo.psm1'
-ModuleVersion = '3.1.7'
+ModuleVersion = '3.2.0'
 GUID = '63f08017-49ae-4ae7-b7f1-76cf9366f8da'
 Author = 'Fabrice Sanga'
 CompanyName = 'sangafabrice'
@@ -19,7 +19,7 @@ PrivateData = @{
         LicenseUri = 'https://github.com/sangafabrice/download-info/blob/main/LICENSE.md'
         ProjectUri = 'https://github.com/sangafabrice/download-info'
         IconUri = 'https://rawcdn.githack.com/sangafabrice/download-info/40b231818d787d68d60f8f65d13b69dc02031ae1/icon.png'
-        ReleaseNotes = 'Change cmdlet to retrieve culture'
+        ReleaseNotes = 'Add attributes to omaha request xml body.'
     }
 }
 }
