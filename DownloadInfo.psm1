@@ -12,7 +12,7 @@ Function Get-DownloadInfo {
             Mandatory=$true
         )]
         [System.Collections.Hashtable] $PropertyList,
-        [ValidateSet('Github', 'Omaha', 'SourceForge')]
+        [ValidateSet('Blisk', 'Github', 'Mozilla', 'MSEdge', 'Omaha', 'Opera', 'SourceForge', 'Vivaldi')]
         [string] $From = 'Github'
     )
 
@@ -215,6 +215,204 @@ Function Get-DownloadInfo {
                     }
                 }
                 Catch {}
+            }
+
+            'Mozilla' {
+                <#
+                    Configuration file --
+                    RepositoryId = 'repository_id'
+                    OSArch = 'x86'|'x64'
+                    VersionDelim = 'b'|'.'|$Null
+                #>
+                
+                Try {
+                    If ($VersionDelim -in '.','\.') { $VersionDelim = $Null }
+                    $UriBase = "https://releases.mozilla.org/pub/$RepositoryId/releases/"
+                    (Invoke-WebRequest $UriBase).Links.href |
+                    ForEach-Object {
+                        [void] ($_ -match "/(?<Version>[0-9\.$VersionDelim]+)/$")
+                        Switch ($Matches.Version -replace 'b','.') { 
+                            { ![string]::IsNullOrEmpty($_) } { 
+                                [PSCustomObject] @{
+                                    VersionString = $Matches.Version
+                                    Version = [version] $_
+                                }
+                        } }
+                    } |
+                    Sort-Object -Descending -Property Version |
+                    Select-Object @{
+                        Name = 'Resource'
+                        Expression = {
+                            $Culture = Get-Culture
+                            $Lang = $Culture.TwoLetterISOLanguageName
+                            $VersionString = $_.VersionString
+                            $UriBase = "$UriBase$VersionString"
+                            $OSArch = $(Switch ($OSArch) { 'x64' { 'win64' } 'x86' { 'win32' } })
+                            $LangInstallers = 
+                                "$(Invoke-WebRequest "$UriBase/SHA512SUMS" -Verbose:$False)" -split "`n" |
+                                ForEach-Object {
+                                    ,@($_ -split ' ',2) |
+                                    ForEach-Object {
+                                        [pscustomobject] @{
+                                            Checksum = $_[0]
+                                            Link = "$($_[1])".Trim()
+                                        }
+                                    } |
+                                    Where-Object Link -Like "$OSArch/*$VersionString.exe"
+                                }
+                            $GroupInstaller = $LangInstallers | Where-Object Link -Like "$OSArch/$Lang*.exe"
+                            Switch ($GroupInstaller.Count) {
+                                0 { $GroupInstaller = $LangInstallers | Where-Object Link -Like "$OSArch/en-US/*" }
+                                { $_ -gt 1 } {
+                                    [void] ($Culture.Name -match '\-(?<Country>[A-Z]{2})$')
+                                    $TempLine = $GroupInstaller | Where-Object Link -Like "$OSArch/$Lang-$($Matches.Country)/*"
+                                    If ([string]::IsNullOrEmpty($TempLine)) {
+                                        If ($Lang -ieq 'en') { $TempLine = $GroupInstaller | Where-Object Link -Like "$OSArch/en-US/*" }
+                                        Else { $TempLine = $GroupInstaller[0] }
+                                    }
+                                    $GroupInstaller = $TempLine
+                                }
+                            }
+                            $GroupInstaller.Link = "$UriBase/$($GroupInstaller.Link)"
+                            $GroupInstaller
+                        } 
+                    },@{
+                        Name = 'Version'
+                        Expression = { $_.VersionString }
+                    } -First 1 |
+                    Select-Object Version -ExpandProperty Resource
+                } Catch { }
+            }
+
+            'Blisk' {
+                <#
+                    Configuration file --
+                #>
+                
+                Try {
+                    @{
+                        Uri = 'https://blisk.io/download/?os=win'
+                        UserAgent = 'NSISDL/1.2 (Mozilla)'
+                        MaximumRedirection = 0
+                        SkipHttpErrorCheck = $True
+                        ErrorAction = 'SilentlyContinue'
+                        Verbose = $False
+                    } | ForEach-Object { (Invoke-WebRequest @_).Headers.Location } |
+                    Select-Object @{
+                        Name = 'Version'
+                        Expression = {
+                            [void] ($_ -match "BliskInstaller_(?<Version>(\d+\.){3}\d+)\.exe$")
+                            [version] $Matches.Version
+                        }
+                    },@{
+                        Name = 'Link'
+                        Expression = { $_ }
+                    } -Unique |
+                    Where-Object { ![string]::IsNullOrEmpty($_.Version) } |
+                    Sort-Object -Descending -Property Version |
+                    Select-Object -First 1
+                } Catch { }
+            }
+
+            'MSEdge' {
+                <#
+                    Configuration file --
+                    OSArch = 'x86'|'x64'
+                #>
+                
+                Try {
+                    $UriBasis = "https://msedge.api.cdp.microsoft.com/api/v1.1/contents/Browser/namespaces/Default/names/msedge-stable-win-$OSArch/versions/"
+                    $WebRequestArgs = {
+                        Param($ActionString)
+                        Return @{
+                            Uri = "$UriBasis$ActionString"
+                            UserAgent = 'winhttp'
+                            Method = 'POST'
+                            Body = '{"targetingAttributes":{}}'
+                            Headers = @{ 'Content-Type' = 'application/json' }
+                            Verbose = $False
+                        }
+                    }
+                    & $WebRequestArgs 'latest?action=select' |
+                    ForEach-Object { 
+                        Invoke-WebRequest @_ |
+                        ConvertFrom-Json |
+                        ForEach-Object {
+                            $Version = $_.ContentId.Version
+                            & $WebRequestArgs "$Version/files?action=GenerateDownloadInfo" |
+                            ForEach-Object { 
+                                (Invoke-WebRequest @_).Content |
+                                ConvertFrom-Json |
+                                Select-Object @{
+                                    Name = 'Size'
+                                    Expression = { $_.SizeInBytes }
+                                },@{
+                                    Name = 'Version'
+                                    Expression = { $Version }
+                                },@{
+                                    Name = 'Name'
+                                    Expression = { $_.FileId }
+                                },@{
+                                    Name = 'Link'
+                                    Expression = { $_.Url }
+                                } |
+                                Sort-Object -Property Size -Descending |
+                                Select-Object Version,Link,Name -First 1
+                            }
+                        }
+                    }
+                } Catch { }
+            }
+
+            'Vivaldi' {
+                <#
+                    Configuration file --
+                    OSArch = 'x86'|'x64'
+                #>
+                
+                Try {
+                    (Invoke-WebRequest 'https://vivaldi.com/download/' -Verbose:$False).Links.href -like '*.exe' | 
+                    Select-Object @{
+                        Name = 'Version'
+                        Expression = {
+                            [void] ($_ -match "Vivaldi\.(?<Version>(\d+\.){3}\d+)$(If($OSArch -eq 'x64'){ '\.x64' })\.exe$")
+                            [version] $Matches.Version
+                        }
+                    },@{
+                        Name = 'Link'
+                        Expression = { $_ }
+                    } -Unique |
+                    Where-Object { ![string]::IsNullOrEmpty($_.Version) } |
+                    Sort-Object -Descending -Property Version |
+                    Select-Object -First 1
+                } Catch { }
+            }
+
+            'Opera' {
+                <#
+                    Configuration file --
+                    RepositoryID = 'repository_id'
+                    OSArch = 'x86'|'x64'
+                    FormatedName = 'formatted_name'
+                #>
+                
+                Try {
+                    $UriBase = "https://get.geo.opera.com/pub/$RepositoryID/"
+                    (Invoke-WebRequest $UriBase -Verbose:$False).Links.href -notlike '../' |
+                    ForEach-Object { [version]($_ -replace '/') } |
+                    Sort-Object -Descending -Unique |
+                    Select-Object @{
+                        Name = 'Version'
+                        Expression = { "$_" }
+                    },@{
+                        Name = 'Link'
+                        Expression = { "$UriBase$_/win/${FormatedName}_$($_)_Setup$(If($OSArch -eq 'x64'){ '_x64' }).exe" }
+                    } -First 1 |
+                    Select-Object Version,Link,@{
+                        Name = 'Checksum';
+                        Expression = { "$(Invoke-WebRequest "$($_.Link).sha256sum" -Verbose:$False)" }
+                    }
+                } Catch { }
             }
         }
     }
