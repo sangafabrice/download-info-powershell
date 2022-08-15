@@ -1,3 +1,9 @@
+<#
+    Configuration file --
+    RepositoryId = "repository_id"
+    AssetPattern = "asset_pattern"
+#>
+
 Try {
     ( @{
         UseBasicParsing = $true;
