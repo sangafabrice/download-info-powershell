@@ -6,19 +6,13 @@
 
 Try {
     @{
-        UseBasicParsing = $true;
         Uri = "https://sourceforge.net/projects/$RepositoryId/files/latest/download";
         Method = 'HEAD';
         UserAgent = 'curl';
         MaximumRedirection = 0;
-        ErrorAction = 'SilentlyContinue'
-    } + $(
-        Switch($PSVersionTable.PSVersion.Major) {
-            7 { @{ SkipHttpErrorCheck = $true; } }
-            Default { @{} }
-        }
-    ) | 
-    ForEach-Object { Invoke-WebRequest @_ } | 
+        ErrorAction = 'SilentlyContinue';
+        SkipHttpErrorCheck = $true;
+    } | ForEach-Object { Invoke-WebRequest @_ } | 
     ForEach-Object {
         If($_.StatusCode -eq 302) {
             [uri] [string] $_.Headers.Location |

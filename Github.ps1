@@ -5,11 +5,7 @@
 #>
 
 Try {
-    ( @{
-        UseBasicParsing = $true;
-        Uri = "https://api.github.com/repos/$RepositoryId/releases/latest"
-    } |
-    ForEach-Object { Invoke-WebRequest @_ } ).Content |
+    (Invoke-WebRequest "https://api.github.com/repos/$RepositoryId/releases/latest").Content |
     Out-String | ConvertFrom-Json |
     Select-Object -Property @{
         Name = 'Version';

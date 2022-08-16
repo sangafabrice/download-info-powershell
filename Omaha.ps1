@@ -53,16 +53,14 @@ $RequestBody = [xml] @"
     & $_ '//@ap' $ApplicationSpec
 }
 Try {
-    ( @{
-        UseBasicParsing = $true;
-        Uri = $UpdateServiceURL;
-        Method = 'POST';
-        UserAgent = 'winhttp';
-        Body = $RequestBody.OuterXml
-    } |
-    ForEach-Object { Invoke-WebRequest @_ } ).Content |
-    Out-String |
-    ForEach-Object {
+    "$( 
+        @{
+            Uri = $UpdateServiceURL;
+            Method = 'POST';
+            UserAgent = 'winhttp';
+            Body = $RequestBody.OuterXml
+        } | ForEach-Object { Invoke-WebRequest @_ } 
+    )" | ForEach-Object {
         $XmlResponse = ([xml] $_).response
         {
             Param ($Xpath)
