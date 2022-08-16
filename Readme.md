@@ -1,5 +1,5 @@
 # **DownloadInfo.psm1**
-![Module Version](https://img.shields.io/badge/version-v4.0.0-yellow) ![Test Coverage](https://img.shields.io/badge/coverage-44.1%25-red)
+![Module Version](https://img.shields.io/badge/version-v5.0.0-yellow) ![Test Coverage](https://img.shields.io/badge/coverage-75.36%25-yellow)
 [![Downloads](https://img.shields.io/chocolatey/dt/download-info.extension?color=blue&label=Chocolatey%20%E2%AC%87%EF%B8%8F)](https://community.chocolatey.org/packages/download-info.extension) [![Downloads](https://img.shields.io/powershellgallery/dt/DownloadInfo?color=blue&label=PSGallery%20%E2%AC%87%EF%B8%8F)](https://www.powershellgallery.com/packages/DownloadInfo)
 ##### Author: Fabrice Sanga
 <br/>
