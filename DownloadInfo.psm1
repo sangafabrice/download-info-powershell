@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param (
+Param (
     [string] $__CommonPath = "$PSScriptRoot\common",
     [string] $__CommonUrl = 'https://api.github.com/repos/sangafabrice/download-info/git/trees/common'
 )
