@@ -7,9 +7,7 @@
 Try {
     ( @{
         UseBasicParsing = $true;
-        Uri = "https://api.github.com/repos/$RepositoryId/releases/$(
-            $(Switch($PSBoundParameters.Version){ {![string]::IsNullOrEmpty($_)} {"tags/$_"} }) ?? 'latest'
-        )"
+        Uri = "https://api.github.com/repos/$RepositoryId/releases/latest"
     } |
     ForEach-Object { Invoke-WebRequest @_ } ).Content |
     Out-String | ConvertFrom-Json |
