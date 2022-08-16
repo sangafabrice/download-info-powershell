@@ -1,6 +1,9 @@
 {
-    "version": "5.0.0",
+    "version": "5.0.1",
     "releaseNotes": [
-        "Separate the main script into server scripts."
+        "Separate the main script into server scripts.",
+        "Remove dynamic parameter.",
+        "Add variable to hold api names.",
+        "Add parameters to initialize variables from command line."
     ]
 }

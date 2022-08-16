@@ -1,13 +1,28 @@
+[CmdletBinding()]
+param (
+    [string] $__CommonPath = "$PSScriptRoot\common",
+    [string] $__CommonUrl = 'https://api.github.com/repos/sangafabrice/download-info/git/trees/common'
+)
+
+New-Item -Path $__CommonPath -ItemType Directory -ErrorAction SilentlyContinue
+$__GetCommonApis = {
+    $Script:__CommonApis = $(
+        Try {
+            (
+                (Invoke-WebRequest $__CommonUrl).Content |
+                ConvertFrom-Json
+            ).tree.path | ForEach-Object { $_ -replace '\.ps1$' }   
+        }
+        Catch { }
+    )
+    Return $__CommonApis
+}
+
 Class FromServer : System.Management.Automation.IValidateSetValuesGenerator {
     [string[]] GetValidValues() {
         Return [string[]] $(
-            Try {
-                (
-                    (Invoke-WebRequest 'https://api.github.com/repos/sangafabrice/download-info/git/trees/common').Content |
-                    ConvertFrom-Json
-                ).tree.path | ForEach-Object { $_ -replace '\.ps1$' }   
-            }
-            Catch { (Get-ChildItem "$PSScriptRoot\common" -ErrorAction SilentlyContinue).Name ?? 'Github' }
+            $Script:__CommonApis ?? (& $Script:__GetCommonApis) ??
+            (Get-ChildItem $Script:__CommonPath -ErrorAction SilentlyContinue).Name
         )
     }
 }
@@ -30,49 +45,24 @@ Function Get-DownloadInfo {
         [string] $From = 'Github'
     )
 
-    DynamicParam {
-        If ('Github' -eq $PSBoundParameters.From) {
-            $ParamName = 'Version'
-            $AttributeCollection = [System.Collections.ObjectModel.Collection[System.Attribute]]::New()
-            $AttributeCollection.Add([System.Management.Automation.ParameterAttribute] @{ Mandatory = $False })
-            $ParamDictionary = [System.Management.Automation.RuntimeDefinedParameterDictionary]::New()
-            $ParamDictionary.Add($ParamName,[System.Management.Automation.RuntimeDefinedParameter]::New($ParamName,[string],$AttributeCollection))
-            $ParamDictionary
-        }
-    }
-
     Begin {
         Switch ($PSCmdlet.ParameterSetName) {
-            <#
-                Initialize configuration variables
-            #>
-
             'UseHashtable' {
                 $PropertyList.Keys |
-                ForEach-Object { @{
-                    Name = $_;
-                    Value = $PropertyList[$_];
-                } } | 
-                ForEach-Object { Set-Variable @_ }
+                ForEach-Object { Set-Variable $_ -Value $PropertyList[$_] }
             }
             Default {
                 Get-Content $Path |
                 ForEach-Object {
                     ,($_ -split '=') |
-                    ForEach-Object { @{
-                        Name = $_[0].Trim();
-                        Value = ($_[1] -replace '"').Trim();
-                    } } | 
-                    ForEach-Object { Set-Variable @_ }
+                    ForEach-Object { Set-Variable $_[0].Trim() -Value ($_[1] -replace '"').Trim() }
                 }
             }
         }
     }
 
     Process {
-        $__CommonPath = "$PSScriptRoot\common"
-        $__CommonScriptPath = "$__CommonPath\$From"
-        New-Item -Path $__CommonPath -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
+        $__CommonScriptPath = "$($Script:__CommonPath)\$From"
         Try {
             $__RequestArguments = @{
                 Uri = "https://github.com/sangafabrice/download-info/raw/common/$(
