@@ -34,6 +34,9 @@ Try {
         }
     } -First 1 | Select-Object Link,@{
         Name = 'Version'
+        Expression = { ([uri] $_.Link).Segments?[-2] -replace '/$' }
+    },@{
+        Name = 'LastModified'
         Expression = { [datetime] "$((Invoke-WebRequest $_.Link -Method Head -Verbose:$False).Headers.'Last-Modified')" }
     }
 }
