@@ -8,7 +8,6 @@ Try {
     (Invoke-WebRequest $UriBase -Verbose:$False).Links.href |
     Where-Object { $_ -match '(\d+\.)+\d+/$' } |
     Select-Object @{Name = 'Version'; Expression = { [version] ($_ -replace '/$') }},@{Name = 'Path'; Expression = { $_ }} |
-    Sort-Object -Descending -Property Version|
     Select-Object @{
         Name = 'Link'
         Expression = {
