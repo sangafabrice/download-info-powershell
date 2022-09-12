@@ -32,14 +32,10 @@ Function Get-DownloadInfo {
     Param (
         [Parameter(
             ParameterSetName='UseFile',
-            Position=0,
-            Mandatory=$true
+            Position=0
         )]
         [string] $Path,
-        [Parameter(
-            ParameterSetName='UseHashtable',
-            Mandatory=$true
-        )]
+        [Parameter(ParameterSetName='UseHashtable')]
         [System.Collections.Hashtable] $PropertyList,
         [ValidateSet([FromServer])]
         [string] $From = 'Github'
@@ -52,11 +48,14 @@ Function Get-DownloadInfo {
                 ForEach-Object { Set-Variable $_ -Value $PropertyList[$_] }
             }
             Default {
-                Get-Content $Path |
-                ForEach-Object {
-                    ,($_ -split '=') |
-                    ForEach-Object { Set-Variable $_[0].Trim() -Value ($_[1] -replace '"').Trim() }
+                Try {
+                    Get-Content $Path |
+                    ForEach-Object {
+                        ,($_ -split '=') |
+                        ForEach-Object { Set-Variable $_[0].Trim() -Value ($_[1] -replace '"').Trim() }
+                    }
                 }
+                Catch { }
             }
         }
     }
@@ -66,7 +65,7 @@ Function Get-DownloadInfo {
         Try {
             $__RequestArguments = @{
                 Uri = "https://github.com/sangafabrice/download-info/raw/common/$(
-                    ((Invoke-WebRequest 'https://api.github.com/repos/sangafabrice/download-info/git/trees/common').Content |
+                    ((Invoke-WebRequest $__CommonUrl).Content |
                     ConvertFrom-Json).tree.path.Where({ $_ -ieq "$From.ps1" })
                 )"
                 Method = 'HEAD'

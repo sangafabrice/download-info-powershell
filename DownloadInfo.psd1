@@ -1,6 +1,6 @@
 @{
 RootModule = 'DownloadInfo.psm1'
-ModuleVersion = '5.0.2'
+ModuleVersion = '5.0.3'
 GUID = '63f08017-49ae-4ae7-b7f1-76cf9366f8da'
 Author = 'Fabrice Sanga'
 CompanyName = 'sangafabrice'
@@ -19,10 +19,8 @@ PrivateData = @{
         LicenseUri = 'https://github.com/sangafabrice/download-info/blob/main/LICENSE.md'
         ProjectUri = 'https://github.com/sangafabrice/download-info'
         IconUri = 'https://rawcdn.githack.com/sangafabrice/download-info/40b231818d787d68d60f8f65d13b69dc02031ae1/icon.png'
-        ReleaseNotes = 'Separate the main script into server scripts.
-Remove dynamic parameter.
-Add variable to hold api names.
-Add parameters to initialize variables from command line.'
+        ReleaseNotes = 'Turn mandatory parameters to optional parameters.
+Fix common url use in the proxy function.'
     }
 }
 }
