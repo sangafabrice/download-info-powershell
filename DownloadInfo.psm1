@@ -59,7 +59,6 @@ Function Get-DownloadInfo {
             }
         }
     }
-
     Process {
         $__CommonScriptPath = "$($Script:__CommonPath)\$From"
         Try {
@@ -86,11 +85,45 @@ Function Get-DownloadInfo {
         }
         Finally {
             $__CommonScript.Where({ $_ }) |
-            ForEach-Object { Invoke-Expression $_ -ErrorAction SilentlyContinue }
+            ForEach-Object { Invoke-Expression $_ -ErrorAction SilentlyContinue } |
+            Select-NonEmptyObject
         }
     }
+}
 
-    End { }
+Function Select-NonEmptyObject {
+    [CmdletBinding()]
+    Param(
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [ValidateNotNullOrEmpty()]
+        [pscustomobject] $Object
+    )
+    Begin {
+        $TestPropertyIsNotEmpty = {
+            Param($o)
+            @(($o | Get-Member -MemberType NoteProperty).Name) |
+            ForEach-Object {
+                If ([string]::IsNullOrEmpty(($o.$_ |
+                    Get-Member -MemberType NoteProperty -ErrorAction SilentlyContinue))) {
+                    ![string]::IsNullOrEmpty($o.$_)
+                } Else { & $MyInvocation.MyCommand.ScriptBlock $o.$_ }
+            }
+        }
+    }
+    Process {
+        Switch ({
+            Where-Object { 
+                If ((& $TestPropertyIsNotEmpty $Object).Where({ !$_ }, 'First').Count -gt 0) { Return $False }
+                Return $True
+            }
+        }.GetSteppablePipeline()) {
+        { $Null -ne $_ } {
+            $_.Begin($true)
+            $_.Process($Object)
+            $_.End()
+            $_.Dispose()
+        } }
+    }
 }
 
 Export-ModuleMember -Function 'Get-DownloadInfo'
