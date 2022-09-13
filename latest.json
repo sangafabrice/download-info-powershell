@@ -1,7 +1,6 @@
 {
-    "version": "5.0.3",
+    "version": "5.0.4",
     "releaseNotes": [
-        "Turn mandatory parameters to optional parameters.",
-        "Fix common url use in the proxy function."
+        "Add Select-NonEmptyObject from module."
     ]
 }
