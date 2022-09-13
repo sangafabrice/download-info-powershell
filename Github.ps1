@@ -11,20 +11,19 @@ Try {
         Name = 'Version';
         Expression = { $_.tag_name }
     },@{
-        Name = 'Link';
+        Name = 'Resource';
         Expression = {
             ,@($_.assets |
             ForEach-Object {
                 If ($_.browser_download_url -match $AssetPattern) { 
                     [PSCustomObject] @{
-                        Url = [uri] $_.browser_download_url;
+                        Link = [uri] $_.browser_download_url;
                         Size = $_.size
                     }
                 }
-            }) | ForEach-Object {
-                Add-Member -InputObject $_ -TypeName array -PassThru
-            }
+            }) | ForEach-Object { Add-Member -InputObject $_ -TypeName array -PassThru }
         }
-    } -Unique
+    } -Unique |
+    Select-Object Version -ExpandProperty Resource
 }
 Catch {}
