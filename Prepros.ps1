@@ -13,7 +13,7 @@ Try {
     } | ForEach-Object { (Invoke-WebRequest @_).Headers.Location } |
     Select-Object @{
         Name = 'Version'
-        Expression = { [version] (([uri] $_).Segments?[-2] -replace '/$') }
+        Expression = { ([uri] $_).Segments?[-2] -replace '/$' }
     },@{
         Name = 'Link'
         Expression = { $_ }
