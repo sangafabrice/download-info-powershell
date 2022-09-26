@@ -9,7 +9,7 @@ Try {
         Expression = {
             $ResponseHeader = (Invoke-WebRequest $_ -Method Head -Verbose:$False).Headers
             [pscustomobject] @{
-                Version = [datetime] "$($ResponseHeader.'Last-Modified')"
+                LastModified = [datetime] "$($ResponseHeader.'Last-Modified')"
                 Name = ($ResponseHeader.'Content-Disposition' -split '=')?[-1]
             }
         }
