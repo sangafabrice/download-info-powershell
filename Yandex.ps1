@@ -4,33 +4,33 @@
 #>
 
 Try {
-    [pscustomobject] @{
-        Version = $(
-            ((Invoke-WebRequest 'https://browser.yandex.ru/corp' -Verbose:$False).Links |
-            Where-Object outerHTML -Like "*Windows $(Switch ($OSArch) { 'x64' { 'x64' } 'x86' { 'x32' } })*").outerHTML |
-            ForEach-Object { 
-                [void] ($_ -match '(?<Version>(\d+\.)+\d+)')
-                $Matches.Version
-            } | Select-Object -Unique -First 1
-        )
-        Resource = $(
+    $OSArch = Switch ($OSArch) { 'x64' { '64' } 'x86' { '32' } }
+    Do {
+        $Url = $(
             @{
-                Uri = 'https://browser.yandex.ru/corp/api/download/get/'
-                Method = 'POST'
-                ContentType = 'text/plain;charset=UTF-8'
-                Body = ('{{"platform":"win_{0}"}}' -f $(Switch ($OSArch) { 'x64' { 'x64' } 'x86' { 'x32' } }))
-            } | ForEach-Object { [uri] ("$(Invoke-WebRequest @_ -Verbose:$False)" | ConvertFrom-Json).url } |
+                Uri = "https://browser.yandex.com/download?bitness=$OSArch"
+                Method = 'HEAD'
+                MaximumRedirection = 0
+                SkipHttpErrorCheck = $True
+                ErrorAction = 'SilentlyContinue'
+            } | ForEach-Object { [uri] (Invoke-WebRequest @_).Headers.Location[0] }
+        )
+    } 
+    While ($Url.Segments[-1] -notlike 'Yandex.exe')
+    [void] ($Url.LocalPath -match '(?<Version>(\d+_){4}\d+)')
+    $Version = ($Matches.Version -split '_')[0..3] -join '.'
+    [pscustomobject] @{
+        Version = [version] $Version
+        Resource = $(
+            "https://api.browser.yandex.ru/update-info/browser/yandex/win-yandex.rss?version=$Version&manual=yes&uid=75C04F2E-8DB0-41B4-B728-79710A9EAE0D" |
+            ForEach-Object { ([xml] "$(Invoke-WebRequest $_)").rss.channel.item } |
             Select-Object @{
                 Name = 'Link'
-                Expression = { $_ }
+                Expression = { $_."guid$OSArch" }
             },@{
-                Name = 'Name'
-                Expression = {
-                    ([uri] $_).query -replace '\?' -split '&' |
-                    Where-Object { $_ -like 'filename=*' } |
-                    ForEach-Object { ($_ -split '=')?[-1] }
-                }
+                Name = 'Checksum'
+                Expression = { $_."md5$OSArch" }
             }
         )
     } | Select-Object Version -ExpandProperty Resource
-} Catch { }
+} Catch { $_ }
