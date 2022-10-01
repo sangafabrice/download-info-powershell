@@ -33,4 +33,4 @@ Try {
             }
         )
     } | Select-Object Version -ExpandProperty Resource
-} Catch { $_ }
+} Catch { }
