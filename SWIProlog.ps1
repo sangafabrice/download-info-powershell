@@ -4,7 +4,6 @@
 #>
 Try {
     Import-Module "${Env:TEMP}\SelectHtml" -RequiredVersion '1.0.1' -ErrorAction SilentlyContinue -Force
-    Get-Module
     If ((Get-Module | Where-Object Name -Like 'SelectHTML').Count -le 0) { Throw }
 } Catch {
     Save-Module SelectHTML ${Env:TEMP} -RequiredVersion '1.0.1' -Force
