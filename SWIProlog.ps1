@@ -2,8 +2,12 @@
     Configuration file --
     OSArch = 'x86'|'x64'
 #>
-#Requires -Module @{ModuleName = 'SelectHtml'; ModuleVersion = '1.0.1'}
-
+Try {
+    Import-Module "$PSScriptRoot\SelectHtml" -RequiredVersion '1.0.1' -Force
+} Catch {
+    Save-Module SelectHTML $PSScriptRoot -RequiredVersion '1.0.1' -Force
+    Import-Module "$PSScriptRoot\SelectHtml" -RequiredVersion '1.0.1' -Force
+}
 Try {
     $BaseUrl = 'https://www.swi-prolog.org/download/stable'
     $url = Invoke-WebRequest $BaseUrl
