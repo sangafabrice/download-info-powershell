@@ -3,7 +3,7 @@
     OSArch = 'x86'|'x64'
 #>
 Try {
-    Import-Module "$PSScriptRoot\SelectHtml" -RequiredVersion '1.0.1' -Force
+    Import-Module "$PSScriptRoot\SelectHtml" -RequiredVersion '1.0.1' -ErrorAction Stop -Force
 } Catch {
     Save-Module SelectHTML $PSScriptRoot -RequiredVersion '1.0.1' -Force
     Import-Module "$PSScriptRoot\SelectHtml" -RequiredVersion '1.0.1' -Force
