@@ -5,7 +5,7 @@
 #>
 Try {
     $Urls =
-        (Invoke-WebRequest "https://filezilla-project.org/download.php?show_all=1&type=$Type" -UserAgent 'Curl').Links.href |
+        (Invoke-WebRequest "https://filezilla-project.org/download.php?show_all=1&type=$($Type.ToLower())" -UserAgent 'Curl').Links.href |
         Where-Object { $_ -like '*?h=*' }
     [uri] @($Urls | Where-Object { $_ -like '*sha512?h=*' })[0] |
     Select-Object @{
